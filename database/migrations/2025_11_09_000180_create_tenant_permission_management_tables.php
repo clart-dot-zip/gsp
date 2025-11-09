@@ -37,7 +37,7 @@ return new class extends Migration {
             $table->foreignId('tenant_group_id')->constrained('tenant_groups')->cascadeOnDelete();
             $table->foreignId('tenant_permission_id')->constrained('tenant_permissions')->cascadeOnDelete();
             $table->timestamps();
-            $table->unique(['tenant_group_id', 'tenant_permission_id']);
+            $table->unique(['tenant_group_id', 'tenant_permission_id'], 'tg_permission_unique');
         });
 
         Schema::create('tenant_group_inheritances', function (Blueprint $table) {
@@ -45,7 +45,7 @@ return new class extends Migration {
             $table->foreignId('parent_group_id')->constrained('tenant_groups')->cascadeOnDelete();
             $table->foreignId('child_group_id')->constrained('tenant_groups')->cascadeOnDelete();
             $table->timestamps();
-            $table->unique(['parent_group_id', 'child_group_id']);
+            $table->unique(['parent_group_id', 'child_group_id'], 'tg_inherit_unique');
         });
 
         Schema::create('tenant_players', function (Blueprint $table) {
@@ -64,7 +64,7 @@ return new class extends Migration {
             $table->foreignId('tenant_group_id')->constrained('tenant_groups')->cascadeOnDelete();
             $table->foreignId('tenant_player_id')->constrained('tenant_players')->cascadeOnDelete();
             $table->timestamps();
-            $table->unique(['tenant_group_id', 'tenant_player_id']);
+            $table->unique(['tenant_group_id', 'tenant_player_id'], 'tg_player_unique');
         });
     }
 
