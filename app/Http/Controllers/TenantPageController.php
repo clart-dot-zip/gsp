@@ -61,7 +61,8 @@ class TenantPageController extends Controller
         $permissionDefinitions = collect();
         $tenantPlayers = collect();
         $permissionsOverview = null;
-        $supportTickets = null;
+    $supportTickets = null;
+    $selectedTicket = null;
         $supportTicketFilters = [];
         $supportTicketHighlightId = $request->query('highlight_ticket');
         $supportAgents = collect();
@@ -105,10 +106,8 @@ class TenantPageController extends Controller
                 $supportTicketQuery = TenantSupportTicket::query()
                     ->with([
                         'assignees.assignee',
-                        'players',
-                        'notes.attachments',
-                        'notes.author',
                     ])
+                    ->withCount(['notes', 'players'])
                     ->forTenant($tenant)
                     ->orderByDesc('opened_at');
 
@@ -132,6 +131,35 @@ class TenantPageController extends Controller
                 $supportTickets = $supportTicketQuery
                     ->paginate(15)
                     ->appends($request->query());
+
+                if ($supportTicketHighlightId) {
+                    $selectedTicket = $supportTickets->firstWhere('id', (int) $supportTicketHighlightId);
+
+                    if (! $selectedTicket) {
+                        $selectedTicket = TenantSupportTicket::query()
+                            ->with([
+                                'assignees.assignee',
+                                'players',
+                                'notes.attachments',
+                                'notes.author',
+                            ])
+                            ->forTenant($tenant)
+                            ->find($supportTicketHighlightId);
+                    }
+                }
+
+                if (! $selectedTicket && $supportTickets->count() > 0) {
+                    $selectedTicket = $supportTickets->first();
+                }
+
+                if ($selectedTicket) {
+                    $selectedTicket->loadMissing([
+                        'assignees.assignee',
+                        'players',
+                        'notes.attachments',
+                        'notes.author',
+                    ]);
+                }
 
                 $supportAgents = User::query()
                     ->whereHas('groups', function ($query) {
@@ -189,6 +217,7 @@ class TenantPageController extends Controller
             'supportTickets' => $supportTickets,
             'supportTicketFilters' => $supportTicketFilters,
             'supportTicketHighlightId' => $supportTicketHighlightId,
+            'selectedTicket' => $selectedTicket,
             'supportAgents' => $supportAgents,
             'supportContacts' => $supportContacts,
             'supportPlayers' => $supportPlayers,

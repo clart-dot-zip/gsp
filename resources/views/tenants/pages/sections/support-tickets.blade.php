@@ -131,257 +131,298 @@
 
     <div class="col-lg-9">
         @if ($supportTickets && $supportTickets->count() > 0)
-            @foreach ($supportTickets as $ticket)
-                @php
-                    $isHighlighted = (int) ($supportTicketHighlightId ?? 0) === (int) $ticket->id;
-                    $ticketClasses = 'card card-outline '.($isHighlighted ? 'card-success' : 'card-primary');
-                    $ticketAnchor = 'ticket-'.$ticket->id;
-                    $assignedLabels = $ticket->assignees->map(function ($assignment) {
-                        $assignee = $assignment->assignee;
-                        if ($assignee instanceof User) {
-                            return $assignee->name;
-                        }
-                        if ($assignee instanceof TenantContact) {
-                            return $assignee->name;
-                        }
-                        return 'Unknown';
-                    })->implode(', ');
-                    $currentUserAssigned = $authUser instanceof User ? $ticket->isAssignedTo($authUser) : false;
-                    $canManageTicket = $supportTicketPermissions['can_manage'];
-                    $canCollaborate = $supportTicketPermissions['can_collaborate'];
-                @endphp
-                <div id="{{ $ticketAnchor }}" class="{{ $ticketClasses }} mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <h3 class="card-title mb-0">{{ $ticket->subject }}</h3>
-                            <p class="mb-0 text-sm text-muted">Reference: {{ $ticket->external_reference ?? 'Not synced yet' }}</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="badge badge-info">{{ $statusOptions[$ticket->status] ?? ucfirst($ticket->status) }}</span>
-                            <span class="badge badge-secondary">Priority: {{ $ticket->priorityLabel() }}</span>
-                            <p class="mb-0 text-muted text-sm">Opened {{ $ticket->opened_at?->diffForHumans() ?? $ticket->created_at->diffForHumans() }}</p>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        @if ($ticket->description)
-                            <div class="mb-3">
-                                {!! nl2br(e($ticket->description)) !!}
-                            </div>
-                        @endif
-
-                        <dl class="row">
-                            <dt class="col-sm-3">Assignees</dt>
-                            <dd class="col-sm-9">{{ $assignedLabels ?: 'Unassigned' }}</dd>
-
-                            <dt class="col-sm-3">Players</dt>
-                            <dd class="col-sm-9">
-                                @if ($ticket->players->isEmpty())
-                                    <span class="text-muted">None linked</span>
-                                @else
-                                    {{ $ticket->players->pluck('display_name')->implode(', ') }}
-                                @endif
-                            </dd>
-                        </dl>
-
-                        @if ($canCollaborate)
-                            <form method="POST" action="{{ route('tenants.support.tickets.update', ['tenant' => $tenant, 'ticket' => $ticket]) }}" class="border rounded p-3 mb-3">
-                                @csrf
-                                @method('PUT')
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label for="ticket-status-{{ $ticket->id }}">Status</label>
-                                        <select id="ticket-status-{{ $ticket->id }}" name="status" class="form-control">
-                                            @foreach ($statusOptions as $value => $label)
-                                                <option value="{{ $value }}" {{ $ticket->status === $value ? 'selected' : '' }}>{{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="ticket-priority-{{ $ticket->id }}">Priority</label>
-                                        <select id="ticket-priority-{{ $ticket->id }}" name="priority" class="form-control">
-                                            @foreach ($priorityOptions as $value => $label)
-                                                <option value="{{ $value }}" {{ $ticket->priority === $value ? 'selected' : '' }}>{{ $label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="ticket-assignees-{{ $ticket->id }}">Assignees</label>
-                                        <select id="ticket-assignees-{{ $ticket->id }}" name="assignees[]" class="form-control" multiple>
-                                            @foreach ($supportAgents as $agent)
-                                                <option value="user:{{ $agent->id }}" {{ $ticket->assignees->contains(fn ($assignment) => $assignment->assignee_type === User::class && $assignment->assignee_id === $agent->id) ? 'selected' : '' }}>
-                                                    {{ $agent->name }} (Admin)
-                                                </option>
-                                            @endforeach
-                                            @foreach ($supportContacts as $contact)
-                                                <option value="contact:{{ $contact->id }}" {{ $ticket->assignees->contains(fn ($assignment) => $assignment->assignee_type === TenantContact::class && $assignment->assignee_id === $contact->id) ? 'selected' : '' }}>
-                                                    {{ $contact->name }} (Tenant)
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+            <div class="row">
+                <div class="col-md-5 mb-4">
+                    <div class="list-group">
+                        @foreach ($supportTickets as $ticket)
+                            @php
+                                $isActive = (int) ($supportTicketHighlightId ?? ($selectedTicket?->id ?? 0)) === (int) $ticket->id;
+                                $statusBadgeClasses = [
+                                    TenantSupportTicket::STATUS_OPEN => 'badge badge-info',
+                                    TenantSupportTicket::STATUS_IN_PROGRESS => 'badge badge-warning',
+                                    TenantSupportTicket::STATUS_RESOLVED => 'badge badge-success',
+                                    TenantSupportTicket::STATUS_CLOSED => 'badge badge-secondary',
+                                ];
+                                $badgeClass = $statusBadgeClasses[$ticket->status] ?? 'badge badge-light';
+                                $linkParameters = array_merge(request()->query(), [
+                                    'page' => 'support_tickets',
+                                    'highlight_ticket' => $ticket->id,
+                                ]);
+                            @endphp
+                            <a href="{{ route('tenants.pages.show', $linkParameters) }}" class="list-group-item list-group-item-action {{ $isActive ? 'active' : '' }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>{{ $ticket->subject }}</span>
+                                    <span class="{{ $badgeClass }}">{{ $statusOptions[$ticket->status] ?? ucfirst($ticket->status) }}</span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="ticket-players-{{ $ticket->id }}">Players</label>
-                                    <select id="ticket-players-{{ $ticket->id }}" name="players[]" class="form-control" multiple>
-                                        @foreach ($supportPlayers as $player)
-                                            <option value="{{ $player->id }}" {{ $ticket->players->contains('id', $player->id) ? 'selected' : '' }}>
-                                                {{ $player->display_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                <div class="small text-muted">Opened {{ $ticket->opened_at?->diffForHumans() ?? $ticket->created_at->diffForHumans() }}</div>
+                                <div class="small mt-1">
+                                    <span class="mr-2">Priority: {{ $ticket->priorityLabel() }}</span>
+                                    <span class="mr-2">Notes: {{ $ticket->notes_count }}</span>
+                                    <span>Players: {{ $ticket->players_count }}</span>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        {{ $supportTickets->links() }}
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+                    @if ($selectedTicket)
+                        @php
+                            $assignedLabels = $selectedTicket->assignees->map(function ($assignment) {
+                                $assignee = $assignment->assignee;
+                                if ($assignee instanceof User) {
+                                    return $assignee->name;
+                                }
+                                if ($assignee instanceof TenantContact) {
+                                    return $assignee->name;
+                                }
+                                return 'Unknown';
+                            })->implode(', ');
+                            $currentUserAssigned = $authUser instanceof User ? $selectedTicket->isAssignedTo($authUser) : false;
+                            $canManageTicket = $supportTicketPermissions['can_manage'];
+                            $canCollaborate = $supportTicketPermissions['can_collaborate'];
+                        @endphp
+
+                        <div class="card card-outline card-primary">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h3 class="card-title mb-0">{{ $selectedTicket->subject }}</h3>
+                                    <p class="mb-0 text-sm text-muted">Reference: {{ $selectedTicket->external_reference ?? 'Not synced yet' }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    <span class="badge badge-info">{{ $statusOptions[$selectedTicket->status] ?? ucfirst($selectedTicket->status) }}</span>
+                                    <span class="badge badge-secondary">Priority: {{ $selectedTicket->priorityLabel() }}</span>
+                                    <p class="mb-0 text-muted text-sm">Opened {{ $selectedTicket->opened_at?->diffForHumans() ?? $selectedTicket->created_at->diffForHumans() }}</p>
                                 </div>
-                            </form>
-                        @endif
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <span class="text-muted">Ticket ID {{ $ticket->id }}</span>
                             </div>
-                            <div>
-                                @if ($canCollaborate)
-                                    @if ($currentUserAssigned)
-                                        <form method="POST" action="{{ route('tenants.support.tickets.release', ['tenant' => $tenant, 'ticket' => $ticket]) }}" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-warning btn-sm">Unclaim</button>
-                                        </form>
-                                    @elseif ($ticket->canBeClaimedBy($authUser))
-                                        <form method="POST" action="{{ route('tenants.support.tickets.claim', ['tenant' => $tenant, 'ticket' => $ticket]) }}" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-success btn-sm">Claim Ticket</button>
-                                        </form>
-                                    @endif
+                            <div class="card-body">
+                                @if ($selectedTicket->description)
+                                    <div class="mb-3">
+                                        {!! nl2br(e($selectedTicket->description)) !!}
+                                    </div>
                                 @endif
-                            </div>
-                        </div>
 
-                        <div class="timeline">
-                            @foreach ($ticket->notes as $note)
-                                @php
-                                    $author = $note->author;
-                                    $noteLabel = 'System';
-                                    if ($author instanceof User) {
-                                        $noteLabel = $author->name;
-                                    } elseif ($author instanceof TenantContact) {
-                                        $noteLabel = $author->name.' (Tenant)';
-                                    }
-                                @endphp
-                                <div class="time-label">
-                                    <span class="bg-{{ $note->is_resolution ? 'success' : 'primary' }}">{{ $note->created_at->format('d M Y H:i') }}</span>
-                                </div>
-                                <div>
-                                    <i class="fas fa-comment bg-gray"></i>
-                                    <div class="timeline-item">
-                                        <span class="time"><i class="far fa-clock"></i> {{ $note->created_at->diffForHumans() }}</span>
-                                        <h3 class="timeline-header">{{ $noteLabel }}</h3>
-                                        <div class="timeline-body">
-                                            @if ($note->body)
-                                                {!! nl2br(e($note->body)) !!}
-                                            @else
-                                                <span class="text-muted">No text provided.</span>
-                                            @endif
+                                <dl class="row">
+                                    <dt class="col-sm-3">Assignees</dt>
+                                    <dd class="col-sm-9">{{ $assignedLabels ?: 'Unassigned' }}</dd>
 
-                                            @if ($note->hasTimer())
-                                                <div class="mt-2">
-                                                    <span class="badge badge-info">Timer: {{ gmdate('H\h i\m s\s', $note->timer_seconds) }}</span>
-                                                </div>
-                                            @endif
+                                    <dt class="col-sm-3">Players</dt>
+                                    <dd class="col-sm-9">
+                                        @if ($selectedTicket->players->isEmpty())
+                                            <span class="text-muted">None linked</span>
+                                        @else
+                                            {{ $selectedTicket->players->pluck('display_name')->implode(', ') }}
+                                        @endif
+                                    </dd>
+                                </dl>
 
-                        @if ($note->attachments->isNotEmpty())
-                                                <ul class="list-unstyled mt-2">
-                                                    @foreach ($note->attachments as $attachment)
-                                                        <li class="mb-1">
-                                                            <a href="{{ $attachment->temporaryUrl() }}" target="_blank" rel="noopener">{{ $attachment->original_name }}</a>
-                                                            @if ($canCollaborate)
-                                                                <form method="POST" action="{{ route('tenants.support.tickets.attachments.destroy', ['tenant' => $tenant, 'ticket' => $ticket, 'attachment' => $attachment]) }}" class="d-inline">
-                                                                    @csrf
-                                                                    @method('DELETE')
-                                                                    <button type="submit" class="btn btn-link btn-sm text-danger p-0 ml-2">Remove</button>
-                                                                </form>
-                                                            @endif
-                                                        </li>
+                                @if ($canCollaborate)
+                                    <form method="POST" action="{{ route('tenants.support.tickets.update', ['tenant' => $tenant, 'ticket' => $selectedTicket]) }}" class="border rounded p-3 mb-3">
+                                        @csrf
+                                        @method('PUT')
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="ticket-status-{{ $selectedTicket->id }}">Status</label>
+                                                <select id="ticket-status-{{ $selectedTicket->id }}" name="status" class="form-control">
+                                                    @foreach ($statusOptions as $value => $label)
+                                                        <option value="{{ $value }}" {{ $selectedTicket->status === $value ? 'selected' : '' }}>{{ $label }}</option>
                                                     @endforeach
-                                                </ul>
-                                            @endif
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="ticket-priority-{{ $selectedTicket->id }}">Priority</label>
+                                                <select id="ticket-priority-{{ $selectedTicket->id }}" name="priority" class="form-control">
+                                                    @foreach ($priorityOptions as $value => $label)
+                                                        <option value="{{ $value }}" {{ $selectedTicket->priority === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="ticket-assignees-{{ $selectedTicket->id }}">Assignees</label>
+                                                <select id="ticket-assignees-{{ $selectedTicket->id }}" name="assignees[]" class="form-control" multiple>
+                                                    @foreach ($supportAgents as $agent)
+                                                        <option value="user:{{ $agent->id }}" {{ $selectedTicket->assignees->contains(fn ($assignment) => $assignment->assignee_type === User::class && $assignment->assignee_id === $agent->id) ? 'selected' : '' }}>
+                                                            {{ $agent->name }} (Admin)
+                                                        </option>
+                                                    @endforeach
+                                                    @foreach ($supportContacts as $contact)
+                                                        <option value="contact:{{ $contact->id }}" {{ $selectedTicket->assignees->contains(fn ($assignment) => $assignment->assignee_type === TenantContact::class && $assignment->assignee_id === $contact->id) ? 'selected' : '' }}>
+                                                            {{ $contact->name }} (Tenant)
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                         </div>
-                                        @php
-                                            $canDeleteNote = false;
-                                            if ($canManageTicket) {
-                                                $canDeleteNote = true;
-                                            } elseif ($authUser instanceof User) {
-                                                if (! $authUser->isTenantContact() && $note->author instanceof User && (int) $note->author->id === (int) $authUser->id) {
-                                                    $canDeleteNote = true;
-                                                }
+                                        <div class="form-group">
+                                            <label for="ticket-players-{{ $selectedTicket->id }}">Players</label>
+                                            <select id="ticket-players-{{ $selectedTicket->id }}" name="players[]" class="form-control" multiple>
+                                                @foreach ($supportPlayers as $player)
+                                                    <option value="{{ $player->id }}" {{ $selectedTicket->players->contains('id', $player->id) ? 'selected' : '' }}>
+                                                        {{ $player->display_name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="text-right">
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                @endif
 
-                                                if ($authUser->isTenantContact() && $authUser->tenantContact && $note->author instanceof TenantContact && (int) $note->author->id === (int) $authUser->tenantContact->id) {
-                                                    $canDeleteNote = true;
-                                                }
-                                            }
-                                        @endphp
-                                        @if ($canCollaborate && $canDeleteNote)
-                                            <div class="timeline-footer">
-                                                <form method="POST" action="{{ route('tenants.support.tickets.notes.destroy', ['tenant' => $tenant, 'ticket' => $ticket, 'note' => $note]) }}" class="d-inline">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="text-muted">Ticket ID {{ $selectedTicket->id }}</span>
+                                    </div>
+                                    <div>
+                                        @if ($canCollaborate)
+                                            @if ($currentUserAssigned)
+                                                <form method="POST" action="{{ route('tenants.support.tickets.release', ['tenant' => $tenant, 'ticket' => $selectedTicket]) }}" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-xs">Delete Note</button>
+                                                    <button type="submit" class="btn btn-warning btn-sm">Unclaim</button>
                                                 </form>
-                                            </div>
+                                            @elseif ($selectedTicket->canBeClaimedBy($authUser))
+                                                <form method="POST" action="{{ route('tenants.support.tickets.claim', ['tenant' => $tenant, 'ticket' => $selectedTicket]) }}" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-success btn-sm">Claim Ticket</button>
+                                                </form>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>
-                            @endforeach
-                            <div>
-                                <i class="fas fa-plus bg-green"></i>
-                                <div class="timeline-item">
-                                    <h3 class="timeline-header">Add Note</h3>
-                                    <div class="timeline-body">
-                                        <form method="POST" action="{{ route('tenants.support.tickets.notes.store', ['tenant' => $tenant, 'ticket' => $ticket]) }}" enctype="multipart/form-data">
-                                            @csrf
-                                            <div class="form-group">
-                                                <label for="note-body-{{ $ticket->id }}">Details</label>
-                                                <textarea id="note-body-{{ $ticket->id }}" name="body" rows="3" class="form-control" placeholder="Update the ticket with new findings"></textarea>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group col-md-4">
-                                                    <label for="note-timer-{{ $ticket->id }}">Timer (minutes)</label>
-                                                    <input type="number" id="note-timer-{{ $ticket->id }}" name="timer_seconds" class="form-control" min="0" step="1" placeholder="Optional">
+
+                                <div class="timeline">
+                                    @foreach ($selectedTicket->notes as $note)
+                                        @php
+                                            $author = $note->author;
+                                            $noteLabel = 'System';
+                                            if ($author instanceof User) {
+                                                $noteLabel = $author->name;
+                                            } elseif ($author instanceof TenantContact) {
+                                                $noteLabel = $author->name.' (Tenant)';
+                                            }
+                                        @endphp
+                                        <div class="time-label">
+                                            <span class="bg-{{ $note->is_resolution ? 'success' : 'primary' }}">{{ $note->created_at->format('d M Y H:i') }}</span>
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-comment bg-gray"></i>
+                                            <div class="timeline-item">
+                                                <span class="time"><i class="far fa-clock"></i> {{ $note->created_at->diffForHumans() }}</span>
+                                                <h3 class="timeline-header">{{ $noteLabel }}</h3>
+                                                <div class="timeline-body">
+                                                    @if ($note->body)
+                                                        {!! nl2br(e($note->body)) !!}
+                                                    @else
+                                                        <span class="text-muted">No text provided.</span>
+                                                    @endif
+
+                                                    @if ($note->hasTimer())
+                                                        <div class="mt-2">
+                                                            <span class="badge badge-info">Timer: {{ gmdate('H\h i\m s\s', $note->timer_seconds) }}</span>
+                                                        </div>
+                                                    @endif
+
+                                                    @if ($note->attachments->isNotEmpty())
+                                                        <ul class="list-unstyled mt-2">
+                                                            @foreach ($note->attachments as $attachment)
+                                                                <li class="mb-1">
+                                                                    <a href="{{ $attachment->temporaryUrl() }}" target="_blank" rel="noopener">{{ $attachment->original_name }}</a>
+                                                                    @if ($canCollaborate)
+                                                                        <form method="POST" action="{{ route('tenants.support.tickets.attachments.destroy', ['tenant' => $tenant, 'ticket' => $selectedTicket, 'attachment' => $attachment]) }}" class="d-inline">
+                                                                            @csrf
+                                                                            @method('DELETE')
+                                                                            <button type="submit" class="btn btn-link btn-sm text-danger p-0 ml-2">Remove</button>
+                                                                        </form>
+                                                                    @endif
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
                                                 </div>
-                                                <div class="form-group col-md-4">
-                                                    <label for="note-start-{{ $ticket->id }}">Timer Started</label>
-                                                    <input type="datetime-local" id="note-start-{{ $ticket->id }}" name="timer_started_at" class="form-control">
-                                                </div>
-                                                <div class="form-group col-md-4">
-                                                    <label for="note-stop-{{ $ticket->id }}">Timer Stopped</label>
-                                                    <input type="datetime-local" id="note-stop-{{ $ticket->id }}" name="timer_stopped_at" class="form-control">
-                                                </div>
+                                                @php
+                                                    $canDeleteNote = false;
+                                                    if ($canManageTicket) {
+                                                        $canDeleteNote = true;
+                                                    } elseif ($authUser instanceof User) {
+                                                        if (! $authUser->isTenantContact() && $note->author instanceof User && (int) $note->author->id === (int) $authUser->id) {
+                                                            $canDeleteNote = true;
+                                                        }
+
+                                                        if ($authUser->isTenantContact() && $authUser->tenantContact && $note->author instanceof TenantContact && (int) $note->author->id === (int) $authUser->tenantContact->id) {
+                                                            $canDeleteNote = true;
+                                                        }
+                                                    }
+                                                @endphp
+                                                @if ($canCollaborate && $canDeleteNote)
+                                                    <div class="timeline-footer">
+                                                        <form method="POST" action="{{ route('tenants.support.tickets.notes.destroy', ['tenant' => $tenant, 'ticket' => $selectedTicket, 'note' => $note]) }}" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger btn-xs">Delete Note</button>
+                                                        </form>
+                                                    </div>
+                                                @endif
                                             </div>
-                                            <div class="form-group">
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="note-resolution-{{ $ticket->id }}" name="is_resolution" value="1">
-                                                    <label class="custom-control-label" for="note-resolution-{{ $ticket->id }}">Mark as resolution</label>
-                                                </div>
+                                        </div>
+                                    @endforeach
+                                    <div>
+                                        <i class="fas fa-plus bg-green"></i>
+                                        <div class="timeline-item">
+                                            <h3 class="timeline-header">Add Note</h3>
+                                            <div class="timeline-body">
+                                                <form method="POST" action="{{ route('tenants.support.tickets.notes.store', ['tenant' => $tenant, 'ticket' => $selectedTicket]) }}" enctype="multipart/form-data">
+                                                    @csrf
+                                                    <div class="form-group">
+                                                        <label for="note-body-{{ $selectedTicket->id }}">Details</label>
+                                                        <textarea id="note-body-{{ $selectedTicket->id }}" name="body" rows="3" class="form-control" placeholder="Update the ticket with new findings"></textarea>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group col-md-4">
+                                                            <label for="note-timer-{{ $selectedTicket->id }}">Timer (minutes)</label>
+                                                            <input type="number" id="note-timer-{{ $selectedTicket->id }}" name="timer_seconds" class="form-control" min="0" step="1" placeholder="Optional">
+                                                        </div>
+                                                        <div class="form-group col-md-4">
+                                                            <label for="note-start-{{ $selectedTicket->id }}">Timer Started</label>
+                                                            <input type="datetime-local" id="note-start-{{ $selectedTicket->id }}" name="timer_started_at" class="form-control">
+                                                        </div>
+                                                        <div class="form-group col-md-4">
+                                                            <label for="note-stop-{{ $selectedTicket->id }}">Timer Stopped</label>
+                                                            <input type="datetime-local" id="note-stop-{{ $selectedTicket->id }}" name="timer_stopped_at" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <div class="custom-control custom-checkbox">
+                                                            <input type="checkbox" class="custom-control-input" id="note-resolution-{{ $selectedTicket->id }}" name="is_resolution" value="1">
+                                                            <label class="custom-control-label" for="note-resolution-{{ $selectedTicket->id }}">Mark as resolution</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="note-attachments-{{ $selectedTicket->id }}">Attachments <span class="text-muted">(images only)</span></label>
+                                                        <input type="file" id="note-attachments-{{ $selectedTicket->id }}" name="attachments[]" class="form-control-file" accept="image/*" multiple>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <button type="submit" class="btn btn-primary btn-sm">Add Note</button>
+                                                    </div>
+                                                </form>
                                             </div>
-                                            <div class="form-group">
-                                                <label for="note-attachments-{{ $ticket->id }}">Attachments <span class="text-muted">(images only)</span></label>
-                                                <input type="file" id="note-attachments-{{ $ticket->id }}" name="attachments[]" class="form-control-file" accept="image/*" multiple>
-                                            </div>
-                                            <div class="text-right">
-                                                <button type="submit" class="btn btn-primary btn-sm">Add Note</button>
-                                            </div>
-                                        </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    @else
+                        <div class="card card-outline card-secondary">
+                            <div class="card-body">
+                                <p class="mb-0 text-muted">Select a ticket from the list to view its details and timeline.</p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
-            @endforeach
-
-            <div class="d-flex justify-content-end">
-                {{ $supportTickets->links() }}
             </div>
         @else
             <div class="card card-outline card-secondary">
