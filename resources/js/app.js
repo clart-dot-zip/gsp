@@ -1,7 +1,12 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
+import jQuery from 'jquery';
 
-window.Alpine = Alpine;
+window.$ = window.jQuery = jQuery;
 
-Alpine.start();
+import 'admin-lte/plugins/fontawesome-free/css/all.min.css';
+import 'overlayscrollbars/css/OverlayScrollbars.min.css';
+import 'admin-lte/dist/css/adminlte.min.css';
+import 'admin-lte/plugins/bootstrap/js/bootstrap.bundle.min.js';
+import 'admin-lte/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js';
+import 'admin-lte';

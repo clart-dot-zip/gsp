@@ -1,41 +1,51 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
-    <link rel="icon" type="image/png" href="{{ asset('images/osaka.png') }}">
+        <link rel="icon" type="image/png" href="{{ asset('images/osaka.png') }}">
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <body class="hold-transition sidebar-mini layout-fixed">
+        <div class="wrapper">
+            @include('layouts.navbar')
+            @include('layouts.sidebar')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
+            <div class="content-wrapper">
+                @isset($header)
+                    <section class="content-header">
+                        <div class="container-fluid">
+                            <div class="row mb-2">
+                                <div class="col-sm-6">
+                                    {{ $header }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <ol class="breadcrumb float-sm-right">
+                                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                                        <li class="breadcrumb-item active">{{ strip_tags((string) $header) }}</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                @endisset
+
+                <section class="content">
+                    <div class="container-fluid">
+                        @hasSection('content')
+                            @yield('content')
+                        @else
+                            {{ $slot ?? '' }}
+                        @endif
                     </div>
-                </header>
-            @endisset
+                </section>
+            </div>
 
-            <!-- Page Content -->
-            <main>
-                @hasSection('content')
-                    @yield('content')
-                @else
-                    {{ $slot ?? '' }}
-                @endif
-            </main>
+            @include('layouts.footer')
         </div>
     </body>
 </html>
