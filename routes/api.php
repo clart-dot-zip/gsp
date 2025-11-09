@@ -28,6 +28,6 @@ Route::middleware('tenant.api')
         Route::get('/tenant/players/{player}', [TenantPlayerController::class, 'show']);
         Route::put('/tenant/players/{player}', [TenantPlayerController::class, 'update']);
         Route::delete('/tenant/players/{player}', [TenantPlayerController::class, 'destroy']);
-              Route::get('/tenant/logs', [TenantDataController::class, 'logs']);
-              Route::post('/tenant/logs', [TenantDataController::class, 'storeLog']);
+        Route::get('/tenant/logs', [TenantDataController::class, 'logs']);
+        Route::post('/tenant/logs', [TenantDataController::class, 'storeLog']);
     });

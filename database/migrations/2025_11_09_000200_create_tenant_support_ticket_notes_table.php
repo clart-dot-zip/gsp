@@ -25,7 +25,7 @@ return new class extends Migration {
             $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->index(['tenant_support_ticket_id', 'created_at']);
+            $table->index(['tenant_support_ticket_id', 'created_at'], 'support_ticket_notes_created_idx');
         });
     }
 
