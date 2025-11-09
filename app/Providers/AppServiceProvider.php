@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Tenant;
 use App\Support\TenantAccessManager;
+use App\Support\TenantPageAuthorization;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -41,43 +42,18 @@ class AppServiceProvider extends ServiceProvider
             'dashboard',
             'tenants.*',
         ], function ($view) {
-            $tenantCategories = Config::get('tenant.categories', []);
-            $tenantPages = [];
-
-            foreach ($tenantCategories as $category) {
-                foreach ($category['pages'] ?? [] as $pageKey => $pageTitle) {
-                    $tenantPages[$pageKey] = $pageTitle;
-                }
-            }
-
             /** @var Request $currentRequest */
             $currentRequest = App::make(Request::class);
             $tenantAccessOptions = TenantAccessManager::options($currentRequest);
             $isPlayerSession = Session::has('active_player_id');
+            $currentUser = Auth::user();
 
-            if ($isPlayerSession) {
-                $allowedCategoryKeys = ['overview', 'support_requests'];
-                $allowedPageKeys = ['overview', 'support_tickets'];
-
-                $tenantCategories = Collection::make($tenantCategories)
-                    ->filter(fn ($category, $key) => in_array($key, $allowedCategoryKeys, true))
-                    ->map(function ($category) use ($allowedPageKeys) {
-                        $category['pages'] = Collection::make($category['pages'] ?? [])
-                            ->filter(fn ($title, $pageKey) => in_array($pageKey, $allowedPageKeys, true))
-                            ->toArray();
-
-                        return $category;
-                    })
-                    ->filter(fn ($category) => ! empty($category['pages']))
-                    ->toArray();
-
-                $tenantPages = Collection::make($tenantPages)
-                    ->filter(fn ($title, $pageKey) => in_array($pageKey, $allowedPageKeys, true))
-                    ->toArray();
-            }
+            $tenantPages = TenantPageAuthorization::accessiblePages($currentUser);
+            $tenantCategories = TenantPageAuthorization::accessibleCategories($currentUser);
 
             $view->with('tenantPages', $tenantPages);
             $view->with('tenantPageCategories', $tenantCategories);
+            $view->with('canViewTenantPages', ! empty($tenantPages));
             $view->with('isPlayerSession', $isPlayerSession);
 
             if (! Schema::hasTable('tenants') || ! Auth::check()) {

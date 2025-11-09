@@ -7,9 +7,9 @@ This document summarizes the major features, admin tools, and tenant-facing expe
 - **Purpose:** Landing page for authorized users; surfaces high-level tenant information and quick actions.
 
 ## Tenant Pages
-- **Location:** `/tenant/pages/{page}` (permission: `view_tenant_pages`)
+- **Location:** `/tenant/pages/{page}` (middleware: `tenant.page.access`)
 - **Purpose:** Provides curated tenant-specific pages grouped by category via the sidebar.
-- **Notes:** Requires a selected tenant context; navigation automatically disables when no tenant is active.
+- **Notes:** Requires a selected tenant context; navigation automatically disables when no tenant is active. Access is granted by page-specific permissions such as `view_tenant_page_support_tickets`, or by the global `view_tenant_pages` grant.
 
 ### Overview
 - **Route key:** `overview`

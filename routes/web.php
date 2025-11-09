@@ -55,7 +55,7 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
     Route::post('/tenants/select', TenantSelectionController::class)->name('tenants.select')->middleware('permission:manage_tenants');
     Route::get('/tenant-access', [TenantAccessController::class, 'show'])->name('tenant-access.show');
     Route::post('/tenant-access', [TenantAccessController::class, 'update'])->name('tenant-access.update');
-    Route::get('/tenant/pages/{page}', [TenantPageController::class, 'show'])->name('tenants.pages.show')->middleware('permission:view_tenant_pages');
+    Route::get('/tenant/pages/{page}', [TenantPageController::class, 'show'])->name('tenants.pages.show')->middleware('tenant.page.access');
     Route::get('/tenants/{tenant}/contacts', [TenantContactController::class, 'index'])->name('tenants.contacts.index')->middleware('permission:manage_contacts');
     Route::post('/tenants/{tenant}/contacts', [TenantContactController::class, 'store'])->name('tenants.contacts.store')->middleware('permission:manage_contacts');
     Route::put('/tenants/{tenant}/contacts/{contact}', [TenantContactController::class, 'update'])->name('tenants.contacts.update')->middleware('permission:manage_contacts');
@@ -84,16 +84,16 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
             Route::delete('/players/{player}/groups/{group}', [TenantPlayerGroupController::class, 'detach'])->name('players.groups.detach');
         });
 
-    Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->middleware('permission:view_tenant_pages')->group(function () {
-            Route::post('/tickets', [TenantSupportTicketController::class, 'store'])->name('tickets.store');
-            Route::put('/tickets/{ticket}', [TenantSupportTicketController::class, 'update'])->name('tickets.update');
-            Route::post('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'claim'])->name('tickets.claim');
-            Route::delete('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'release'])->name('tickets.release');
+    Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->group(function () {
+            Route::post('/tickets', [TenantSupportTicketController::class, 'store'])->name('tickets.store')->middleware('permission:support_tickets_create');
+            Route::put('/tickets/{ticket}', [TenantSupportTicketController::class, 'update'])->name('tickets.update')->middleware('permission:support_tickets_collaborate');
+            Route::post('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'claim'])->name('tickets.claim')->middleware('permission:support_tickets_collaborate');
+            Route::delete('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'release'])->name('tickets.release')->middleware('permission:support_tickets_collaborate');
 
-            Route::post('/tickets/{ticket}/notes', [TenantSupportTicketNoteController::class, 'store'])->name('tickets.notes.store');
-            Route::delete('/tickets/{ticket}/notes/{note}', [TenantSupportTicketNoteController::class, 'destroy'])->name('tickets.notes.destroy');
+            Route::post('/tickets/{ticket}/notes', [TenantSupportTicketNoteController::class, 'store'])->name('tickets.notes.store')->middleware('permission:support_tickets_comment');
+            Route::delete('/tickets/{ticket}/notes/{note}', [TenantSupportTicketNoteController::class, 'destroy'])->name('tickets.notes.destroy')->middleware('permission:support_tickets_collaborate');
 
-            Route::delete('/tickets/{ticket}/attachments/{attachment}', [TenantSupportTicketAttachmentController::class, 'destroy'])->name('tickets.attachments.destroy');
+            Route::delete('/tickets/{ticket}/attachments/{attachment}', [TenantSupportTicketAttachmentController::class, 'destroy'])->name('tickets.attachments.destroy')->middleware('permission:support_tickets_collaborate');
         });
     });
 

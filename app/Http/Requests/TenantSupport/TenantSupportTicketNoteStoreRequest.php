@@ -9,7 +9,8 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
      */
     public function authorize(): bool
     {
-        return $this->authorizeForTenant();
+        return $this->authorizeForTenant()
+            && $this->userHasSupportPermission('support_tickets_comment');
     }
 
     /**
@@ -17,22 +18,19 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
      */
     public function rules(): array
     {
+        $isPlayerSession = $this->session()->has('active_player_id');
+        $canCollaborate = $this->userHasSupportPermission('support_tickets_collaborate');
+        $canAttach = $this->userHasSupportPermission('support_tickets_attach');
+
         $rules = [
             'body' => ['nullable', 'string'],
-            'is_resolution' => ['nullable', 'boolean'],
-            'timer_seconds' => ['nullable', 'integer', 'min:0'],
-            'timer_started_at' => ['nullable', 'date'],
-            'timer_stopped_at' => ['nullable', 'date', 'after_or_equal:timer_started_at'],
-            'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'image', 'max:5120'],
+            'is_resolution' => $isPlayerSession || ! $canCollaborate ? ['prohibited'] : ['nullable', 'boolean'],
+            'timer_seconds' => $isPlayerSession || ! $canCollaborate ? ['prohibited'] : ['nullable', 'integer', 'min:0'],
+            'timer_started_at' => $isPlayerSession || ! $canCollaborate ? ['prohibited'] : ['nullable', 'date'],
+            'timer_stopped_at' => $isPlayerSession || ! $canCollaborate ? ['prohibited'] : ['nullable', 'date', 'after_or_equal:timer_started_at'],
+            'attachments' => $canAttach ? ['nullable', 'array'] : ['prohibited'],
+            'attachments.*' => $canAttach ? ['file', 'image', 'max:5120'] : ['prohibited'],
         ];
-
-        if ($this->session()->has('active_player_id')) {
-            $rules['is_resolution'] = ['prohibited'];
-            $rules['timer_seconds'] = ['prohibited'];
-            $rules['timer_started_at'] = ['prohibited'];
-            $rules['timer_stopped_at'] = ['prohibited'];
-        }
 
         return $rules;
     }
@@ -42,22 +40,15 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
      */
     public function payload(): array
     {
-        if ($this->session()->has('active_player_id')) {
-            return [
-                'body' => $this->input('body'),
-                'is_resolution' => false,
-                'timer_seconds' => null,
-                'timer_started_at' => null,
-                'timer_stopped_at' => null,
-            ];
-        }
+        $isPlayerSession = $this->session()->has('active_player_id');
+        $canCollaborate = $this->userHasSupportPermission('support_tickets_collaborate');
 
         return [
             'body' => $this->input('body'),
-            'is_resolution' => $this->boolean('is_resolution'),
-            'timer_seconds' => $this->input('timer_seconds'),
-            'timer_started_at' => $this->input('timer_started_at'),
-            'timer_stopped_at' => $this->input('timer_stopped_at'),
+            'is_resolution' => ($isPlayerSession || ! $canCollaborate) ? false : $this->boolean('is_resolution'),
+            'timer_seconds' => ($isPlayerSession || ! $canCollaborate) ? null : $this->input('timer_seconds'),
+            'timer_started_at' => ($isPlayerSession || ! $canCollaborate) ? null : $this->input('timer_started_at'),
+            'timer_stopped_at' => ($isPlayerSession || ! $canCollaborate) ? null : $this->input('timer_stopped_at'),
         ];
     }
 
@@ -66,14 +57,11 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
      */
     public function hasContent(): bool
     {
+        $canAttach = $this->userHasSupportPermission('support_tickets_attach');
         $payload = $this->payload();
 
         if (! empty($payload['body'])) {
             return true;
-        }
-
-        if ($this->session()->has('active_player_id')) {
-            return $this->hasFile('attachments');
         }
 
         if (! is_null($payload['timer_seconds']) && (int) $payload['timer_seconds'] > 0) {
@@ -84,7 +72,11 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
             return true;
         }
 
-        return $this->hasFile('attachments');
+        if ($canAttach && $this->hasFile('attachments')) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function prepareForValidation(): void
@@ -93,7 +85,7 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
             return;
         }
 
-        if ($this->filled('timer_seconds')) {
+        if ($this->filled('timer_seconds') && $this->userHasSupportPermission('support_tickets_collaborate')) {
             $minutes = (int) $this->input('timer_seconds');
             $this->merge([
                 'timer_seconds' => max(0, $minutes) * 60,

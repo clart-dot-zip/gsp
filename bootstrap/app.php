@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuthenticateTenantApiKey;
 use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\EnsureTenantPageAccess;
 use App\Http\Middleware\LogTenantActivity;
 use App\Http\Middleware\RedirectIfUnauthenticated;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => EnsurePermission::class,
             'tenant.activity' => LogTenantActivity::class,
             'tenant.api' => AuthenticateTenantApiKey::class,
+            'tenant.page.access' => EnsureTenantPageAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

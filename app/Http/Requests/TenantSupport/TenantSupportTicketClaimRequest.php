@@ -10,7 +10,8 @@ class TenantSupportTicketClaimRequest extends TenantSupportTicketRequest
             return false;
         }
 
-        return $this->authorizeForTenant();
+        return $this->authorizeForTenant()
+            && $this->userHasSupportPermission('support_tickets_collaborate');
     }
 
     public function rules(): array

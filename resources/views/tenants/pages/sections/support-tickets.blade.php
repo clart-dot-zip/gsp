@@ -21,6 +21,7 @@
     $authUser = Auth::user();
     $playerSessionActive = isset($isPlayerSession) ? (bool) $isPlayerSession : (bool) ($supportTicketPermissions['is_player'] ?? false);
     $canComment = $supportTicketPermissions['can_comment'] ?? false;
+    $canAttachFiles = $supportTicketPermissions['can_attach'] ?? false;
 @endphp
 
 <div class="row">
@@ -128,10 +129,12 @@
                                 </div>
                             </div>
                         @endunless
-                        <div class="form-group">
-                            <label for="ticket-attachments">Attachments <span class="text-muted">(images only)</span></label>
-                            <input type="file" id="ticket-attachments" name="attachments[]" class="form-control-file" accept="image/*" multiple>
-                        </div>
+                        @if ($canAttachFiles)
+                            <div class="form-group">
+                                <label for="ticket-attachments">Attachments <span class="text-muted">(images only)</span></label>
+                                <input type="file" id="ticket-attachments" name="attachments[]" class="form-control-file" accept="image/*" multiple>
+                            </div>
+                        @endif
                     </div>
                     <div class="card-footer text-right">
                         <button type="submit" class="btn btn-success">Create Ticket</button>
@@ -422,10 +425,12 @@
                                                                 </div>
                                                             </div>
                                                         @endunless
-                                                        <div class="form-group">
-                                                            <label for="note-attachments-{{ $selectedTicket->id }}">Attachments <span class="text-muted">(images only)</span></label>
-                                                            <input type="file" id="note-attachments-{{ $selectedTicket->id }}" name="attachments[]" class="form-control-file" accept="image/*" multiple>
-                                                        </div>
+                                                        @if ($canAttachFiles)
+                                                            <div class="form-group">
+                                                                <label for="note-attachments-{{ $selectedTicket->id }}">Attachments <span class="text-muted">(images only)</span></label>
+                                                                <input type="file" id="note-attachments-{{ $selectedTicket->id }}" name="attachments[]" class="form-control-file" accept="image/*" multiple>
+                                                            </div>
+                                                        @endif
                                                         <div class="text-right">
                                                             <button type="submit" class="btn btn-primary btn-sm">Add Note</button>
                                                         </div>

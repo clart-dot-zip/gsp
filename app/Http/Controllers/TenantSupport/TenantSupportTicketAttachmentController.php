@@ -71,7 +71,7 @@ class TenantSupportTicketAttachmentController extends Controller
      */
     protected function canModifyAttachment($user, Tenant $tenant, TenantSupportTicketAttachment $attachment): bool
     {
-        if ($user instanceof User && $user->hasPermission('manage_support_tickets')) {
+        if ($user instanceof User && ($user->hasPermission('manage_support_tickets') || $user->hasPermission('support_tickets_collaborate'))) {
             return true;
         }
 

@@ -19,7 +19,7 @@
         @php
             $sidebarUser = Auth::user();
             $isPlayerSession = isset($isPlayerSession) ? (bool) $isPlayerSession : (bool) session('active_player_id');
-            $canViewTenantPages = $sidebarUser && $sidebarUser->hasPermission('view_tenant_pages');
+            $canViewTenantPages = isset($canViewTenantPages) ? (bool) $canViewTenantPages : ($sidebarUser && $sidebarUser->hasPermission('view_tenant_pages'));
             $canManageTenants = $sidebarUser && $sidebarUser->hasPermission('manage_tenants');
             $canManageContacts = $sidebarUser && $sidebarUser->hasPermission('manage_contacts');
             $canManageAccess = $sidebarUser && $sidebarUser->hasPermission('manage_access');

@@ -8,6 +8,7 @@ use App\Models\TenantSupportTicket;
 use App\Models\TenantSupportTicketAssignee;
 use App\Models\TenantContact;
 use App\Support\TenantAccessManager;
+use App\Support\TenantPageAuthorization;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -56,18 +57,22 @@ class TenantPageController extends Controller
             }
         }
 
-        if ($isPlayerSession) {
-            $allowedPageKeys = ['overview', 'support_tickets'];
-            $pages = array_intersect_key($pages, array_flip($allowedPageKeys));
-
-            if (! in_array($page, $allowedPageKeys, true)) {
-                return redirect()->route('tenants.pages.show', ['page' => 'support_tickets']);
-            }
-        }
-
         abort_unless(array_key_exists($page, $pages), 404);
 
         $user = $request->user();
+        $tenantPageUser = $user instanceof User ? $user : null;
+        $accessiblePages = TenantPageAuthorization::accessiblePages($tenantPageUser);
+
+        if (! array_key_exists($page, $accessiblePages)) {
+            $fallbackPage = array_key_first($accessiblePages);
+
+            if ($fallbackPage) {
+                return redirect()->route('tenants.pages.show', ['page' => $fallbackPage]);
+            }
+
+            abort(403);
+        }
+
         if ($user && method_exists($user, 'isTenantContact') && $user->isTenantContact()) {
             $contactTenantId = $user->tenantContact ? $user->tenantContact->tenant_id : null;
             if ($contactTenantId !== $tenant->id) {
@@ -88,27 +93,30 @@ class TenantPageController extends Controller
         $supportContacts = collect();
         $supportPlayers = collect();
         $supportTicketStats = [];
-        $supportTicketPermissions = [
-            'can_manage' => $user && $user->hasPermission('manage_support_tickets'),
-            'can_collaborate' => false,
-            'is_player' => $isPlayerSession,
-            'can_comment' => false,
-            'can_create' => false,
-        ];
+        $supportsUser = $user instanceof User ? $user : null;
+        $canManageSupport = $supportsUser ? $supportsUser->hasPermission('manage_support_tickets') : false;
 
-        if ($user) {
-            $supportTicketPermissions['can_collaborate'] = $supportTicketPermissions['can_manage']
-                || ($user->isTenantContact() && $user->tenantContact && (int) $user->tenantContact->tenant_id === (int) $tenant->id);
-            if ($supportTicketPermissions['can_collaborate']) {
-                $supportTicketPermissions['can_create'] = true;
+        $hasSupportPermission = function (string $permission) use ($supportsUser, $canManageSupport): bool {
+            if ($canManageSupport) {
+                return true;
             }
-        }
 
-        if ($isPlayerSession) {
-            $supportTicketPermissions['can_collaborate'] = false;
-            $supportTicketPermissions['can_comment'] = true;
-            $supportTicketPermissions['can_create'] = true;
-        }
+            return $supportsUser ? $supportsUser->hasPermission($permission) : false;
+        };
+
+        $canCollaborate = $hasSupportPermission('support_tickets_collaborate');
+        $canComment = $canCollaborate || $hasSupportPermission('support_tickets_comment');
+        $canCreate = $canCollaborate || $hasSupportPermission('support_tickets_create');
+        $canAttach = $canCollaborate || $hasSupportPermission('support_tickets_attach');
+
+        $supportTicketPermissions = [
+            'can_manage' => $canManageSupport,
+            'can_collaborate' => $canCollaborate,
+            'can_comment' => $canComment,
+            'can_create' => $canCreate,
+            'can_attach' => $canAttach,
+            'is_player' => $isPlayerSession,
+        ];
 
         if ($page === 'activity_logs') {
             $activityLogs = TenantActivityLog::with(['user'])

@@ -5,7 +5,9 @@ namespace Database\Seeders;
 use App\Models\Group;
 use App\Models\Permission;
 use App\Models\User;
+use App\Support\TenantPageAuthorization;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Config;
 
 class AccessControlSeeder extends Seeder
 {
@@ -26,6 +28,24 @@ class AccessControlSeeder extends Seeder
             ['slug' => 'manage_support_tickets', 'name' => 'Manage Support Tickets'],
         ];
 
+        $tenantCategories = Config::get('tenant.categories', []);
+
+        foreach ($tenantCategories as $category) {
+            foreach (($category['pages'] ?? []) as $pageKey => $pageTitle) {
+                $permissions[] = [
+                    'slug' => TenantPageAuthorization::permissionForPage((string) $pageKey),
+                    'name' => 'View Tenant Page: '.$pageTitle,
+                ];
+            }
+        }
+
+        $permissions = array_merge($permissions, [
+            ['slug' => 'support_tickets_create', 'name' => 'Create Support Tickets'],
+            ['slug' => 'support_tickets_comment', 'name' => 'Comment on Support Tickets'],
+            ['slug' => 'support_tickets_attach', 'name' => 'Upload Support Ticket Attachments'],
+            ['slug' => 'support_tickets_collaborate', 'name' => 'Collaborate on Support Tickets'],
+        ]);
+
         foreach ($permissions as $permissionData) {
             Permission::updateOrCreate(
                 ['slug' => $permissionData['slug']],
@@ -43,9 +63,16 @@ class AccessControlSeeder extends Seeder
             ['name' => 'Tenant Contacts']
         );
 
+        $legacyPlayerGroup = Group::firstWhere('slug', 'tenant-player');
+        if ($legacyPlayerGroup) {
+            $legacyPlayerGroup->slug = 'player';
+            $legacyPlayerGroup->name = 'Players';
+            $legacyPlayerGroup->save();
+        }
+
         $tenantPlayerGroup = Group::firstOrCreate(
-            ['slug' => 'tenant-player'],
-            ['name' => 'Tenant Players']
+            ['slug' => 'player'],
+            ['name' => 'Players']
         );
 
         $allPermissionIds = Permission::pluck('id', 'slug');
@@ -53,7 +80,15 @@ class AccessControlSeeder extends Seeder
         $adminGroup->permissions()->sync($allPermissionIds->values()->all());
 
         $tenantContactPermissions = $allPermissionIds
-            ->only(['view_dashboard', 'view_tenant_pages'])
+            ->only([
+                'view_dashboard',
+                'view_tenant_pages',
+                'support_tickets_collaborate',
+                'support_tickets_comment',
+                'support_tickets_attach',
+                'support_tickets_create',
+                TenantPageAuthorization::permissionForPage('support_tickets'),
+            ])
             ->filter()
             ->values()
             ->all();
@@ -61,7 +96,13 @@ class AccessControlSeeder extends Seeder
         $tenantContactGroup->permissions()->sync($tenantContactPermissions);
 
         $tenantPlayerPermissions = $allPermissionIds
-            ->only(['view_tenant_pages'])
+            ->only([
+                TenantPageAuthorization::permissionForPage('overview'),
+                TenantPageAuthorization::permissionForPage('support_tickets'),
+                'support_tickets_create',
+                'support_tickets_comment',
+                'support_tickets_attach',
+            ])
             ->filter()
             ->values()
             ->all();

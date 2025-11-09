@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
+use App\Support\TenantPageAuthorization;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,10 +15,14 @@ class EnsureTenantPageAccess
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->session()->has('active_player_id')) {
-            return $next($request);
+        $pageKey = (string) $request->route('page');
+        $user = $request->user();
+        $authorizedUser = $user instanceof User ? $user : null;
+
+        if (! TenantPageAuthorization::canAccessPage($authorizedUser, $pageKey)) {
+            abort(403);
         }
 
-    return (new EnsurePermission())->handle($request, $next, 'view_tenant_pages');
+        return $next($request);
     }
 }

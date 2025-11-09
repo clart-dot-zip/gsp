@@ -48,6 +48,40 @@ abstract class TenantSupportTicketRequest extends FormRequest
     }
 
     /**
+     * Check whether the acting user has the given support ticket capability.
+     */
+    protected function userHasSupportPermission(string $permission): bool
+    {
+        $user = $this->user();
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        if ($user->hasPermission('manage_support_tickets')) {
+            return true;
+        }
+
+        return $user->hasPermission($permission);
+    }
+
+    /**
+     * Determine whether the acting user can collaborate on support tickets.
+     */
+    public function canCollaborate(): bool
+    {
+        return $this->userHasSupportPermission('support_tickets_collaborate');
+    }
+
+    /**
+     * Determine whether the acting user can upload support ticket attachments.
+     */
+    public function canAttachFiles(): bool
+    {
+        return $this->userHasSupportPermission('support_tickets_attach');
+    }
+
+    /**
      * Resolve the tenant instance from the current route.
      */
     public function tenant(): ?Tenant

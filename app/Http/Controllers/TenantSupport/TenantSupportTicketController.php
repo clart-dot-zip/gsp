@@ -40,7 +40,9 @@ class TenantSupportTicketController extends Controller
         $activePlayerId = (int) $request->session()->get('active_player_id', 0);
         $activePlayerId = $activePlayerId > 0 ? $activePlayerId : null;
 
-        $ticket = DB::transaction(function () use ($request, $tenant, $user, $contact, $disk, $activePlayerId) {
+        $canAttachFiles = $request->canAttachFiles();
+
+        $ticket = DB::transaction(function () use ($request, $tenant, $user, $contact, $disk, $activePlayerId, $canAttachFiles) {
             $ticket = new TenantSupportTicket([
                 'tenant_id' => $tenant->id,
                 'subject' => $request->input('subject'),
@@ -76,7 +78,7 @@ class TenantSupportTicketController extends Controller
             }
 
             $notePayload = $request->notePayload();
-            $uploadedFiles = $request->file('attachments', []);
+            $uploadedFiles = $canAttachFiles ? $request->file('attachments', []) : [];
 
             if ($notePayload || ! empty($uploadedFiles)) {
                 $this->noteManager->createNoteWithAttachments(

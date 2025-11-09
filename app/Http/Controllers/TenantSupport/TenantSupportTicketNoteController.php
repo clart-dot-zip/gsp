@@ -49,9 +49,11 @@ class TenantSupportTicketNoteController extends Controller
         $contact = $request->actingTenantContact();
         $disk = Config::get('filesystems.default', 'public');
 
-        DB::transaction(function () use ($request, $ticket, $user, $contact, $disk) {
+        $canAttachFiles = $request->canAttachFiles();
+
+        DB::transaction(function () use ($request, $ticket, $user, $contact, $disk, $canAttachFiles) {
             $payload = $request->payload();
-            $attachments = $request->file('attachments', []);
+            $attachments = $canAttachFiles ? $request->file('attachments', []) : [];
 
             $this->noteManager->createNoteWithAttachments(
                 $ticket,
@@ -146,7 +148,7 @@ class TenantSupportTicketNoteController extends Controller
      */
     protected function canDeleteNote($user, Tenant $tenant, TenantSupportTicketNote $note): bool
     {
-        if ($user instanceof User && $user->hasPermission('manage_support_tickets')) {
+        if ($user instanceof User && ($user->hasPermission('manage_support_tickets') || $user->hasPermission('support_tickets_collaborate'))) {
             return true;
         }
 

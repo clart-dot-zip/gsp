@@ -13,22 +13,30 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use function collect;
 
 uses(RefreshDatabase::class);
 
 function createSupportAdminUser(): User
 {
-    $viewPermission = Permission::firstOrCreate([
-        'slug' => 'view_tenant_pages',
-    ], [
-        'name' => 'View Tenant Pages',
-    ]);
+    $permissionSlugs = [
+        'view_tenant_pages' => 'View Tenant Pages',
+        'manage_support_tickets' => 'Manage Support Tickets',
+        'support_tickets_create' => 'Create Support Tickets',
+        'support_tickets_comment' => 'Comment on Support Tickets',
+        'support_tickets_attach' => 'Upload Support Ticket Attachments',
+        'support_tickets_collaborate' => 'Collaborate on Support Tickets',
+        'view_tenant_page_support_tickets' => 'View Tenant Page: Staff Help Requests',
+    ];
 
-    $managePermission = Permission::firstOrCreate([
-        'slug' => 'manage_support_tickets',
-    ], [
-        'name' => 'Manage Support Tickets',
-    ]);
+    $permissionIds = collect($permissionSlugs)->mapWithKeys(function ($name, $slug) {
+        $permission = Permission::firstOrCreate(
+            ['slug' => $slug],
+            ['name' => $name]
+        );
+
+        return [$slug => $permission->id];
+    });
 
     $group = Group::firstOrCreate([
         'slug' => 'administrators',
@@ -36,7 +44,7 @@ function createSupportAdminUser(): User
         'name' => 'Administrators',
     ]);
 
-    $group->permissions()->syncWithoutDetaching([$viewPermission->id, $managePermission->id]);
+    $group->permissions()->syncWithoutDetaching($permissionIds->values()->all());
 
     $user = User::factory()->create();
     $user->groups()->sync([$group->id]);

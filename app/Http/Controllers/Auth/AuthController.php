@@ -218,7 +218,7 @@ class AuthController extends Controller
             $user->save();
         }
 
-        $group = Group::firstWhere('slug', 'tenant-player');
+    $group = Group::firstWhere('slug', 'player');
         if ($group) {
             $user->groups()->syncWithoutDetaching([$group->id]);
         }
