@@ -19,6 +19,8 @@
     ];
 
     $authUser = Auth::user();
+    $playerSessionActive = isset($isPlayerSession) ? (bool) $isPlayerSession : (bool) ($supportTicketPermissions['is_player'] ?? false);
+    $canComment = $supportTicketPermissions['can_comment'] ?? false;
 @endphp
 
 <div class="row">
@@ -85,22 +87,30 @@
                         </div>
                         <div class="form-group">
                             <label for="ticket-assignees">Assign To <span class="text-muted">(optional)</span></label>
-                            <select id="ticket-assignees" name="assignees[]" class="form-control" multiple>
-                                @foreach ($supportAgents as $agent)
-                                    <option value="user:{{ $agent->id }}">{{ $agent->name }} (Admin)</option>
-                                @endforeach
-                                @foreach ($supportContacts as $contact)
-                                    <option value="contact:{{ $contact->id }}">{{ $contact->name }} (Tenant)</option>
-                                @endforeach
-                            </select>
+                            @if ($playerSessionActive)
+                                <p class="form-control-plaintext text-muted mb-0">Assignments are handled by staff.</p>
+                            @else
+                                <select id="ticket-assignees" name="assignees[]" class="form-control" multiple>
+                                    @foreach ($supportAgents as $agent)
+                                        <option value="user:{{ $agent->id }}">{{ $agent->name }} (Admin)</option>
+                                    @endforeach
+                                    @foreach ($supportContacts as $contact)
+                                        <option value="contact:{{ $contact->id }}">{{ $contact->name }} (Tenant)</option>
+                                    @endforeach
+                                </select>
+                            @endif
                         </div>
                         <div class="form-group">
                             <label for="ticket-players">Related Players <span class="text-muted">(optional)</span></label>
-                            <select id="ticket-players" name="players[]" class="form-control" multiple>
-                                @foreach ($supportPlayers as $player)
-                                    <option value="{{ $player->id }}">{{ $player->display_name }}</option>
-                                @endforeach
-                            </select>
+                            @if ($playerSessionActive)
+                                <p class="form-control-plaintext text-muted mb-0">Tickets you create will be linked to your player profile automatically.</p>
+                            @else
+                                <select id="ticket-players" name="players[]" class="form-control" multiple>
+                                    @foreach ($supportPlayers as $player)
+                                        <option value="{{ $player->id }}">{{ $player->display_name }}</option>
+                                    @endforeach
+                                </select>
+                            @endif
                         </div>
                         <div class="form-group">
                             <label for="ticket-note">Ticket Notes <span class="text-muted">(optional)</span></label>
@@ -185,6 +195,7 @@
                             $currentUserAssigned = $authUser instanceof User ? $selectedTicket->isAssignedTo($authUser) : false;
                             $canManageTicket = $supportTicketPermissions['can_manage'];
                             $canCollaborate = $supportTicketPermissions['can_collaborate'];
+                            $canAddNote = $canCollaborate || $canComment;
                         @endphp
 
                         <div class="card card-outline card-primary">
@@ -375,48 +386,52 @@
                                             </div>
                                         </div>
                                     @endforeach
-                                    <div>
-                                        <i class="fas fa-plus bg-green"></i>
-                                        <div class="timeline-item">
-                                            <h3 class="timeline-header">Add Note</h3>
-                                            <div class="timeline-body">
-                                                <form method="POST" action="{{ route('tenants.support.tickets.notes.store', ['tenant' => $tenant, 'ticket' => $selectedTicket]) }}" enctype="multipart/form-data">
-                                                    @csrf
-                                                    <div class="form-group">
-                                                        <label for="note-body-{{ $selectedTicket->id }}">Details</label>
-                                                        <textarea id="note-body-{{ $selectedTicket->id }}" name="body" rows="3" class="form-control" placeholder="Update the ticket with new findings"></textarea>
-                                                    </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group col-md-4">
-                                                            <label for="note-timer-{{ $selectedTicket->id }}">Timer (minutes)</label>
-                                                            <input type="number" id="note-timer-{{ $selectedTicket->id }}" name="timer_seconds" class="form-control" min="0" step="1" placeholder="Optional">
+                                    @if ($canAddNote)
+                                        <div>
+                                            <i class="fas fa-plus bg-green"></i>
+                                            <div class="timeline-item">
+                                                <h3 class="timeline-header">Add Note</h3>
+                                                <div class="timeline-body">
+                                                    <form method="POST" action="{{ route('tenants.support.tickets.notes.store', ['tenant' => $tenant, 'ticket' => $selectedTicket]) }}" enctype="multipart/form-data">
+                                                        @csrf
+                                                        <div class="form-group">
+                                                            <label for="note-body-{{ $selectedTicket->id }}">Details</label>
+                                                            <textarea id="note-body-{{ $selectedTicket->id }}" name="body" rows="3" class="form-control" placeholder="Update the ticket with new findings"></textarea>
                                                         </div>
-                                                        <div class="form-group col-md-4">
-                                                            <label for="note-start-{{ $selectedTicket->id }}">Timer Started</label>
-                                                            <input type="datetime-local" id="note-start-{{ $selectedTicket->id }}" name="timer_started_at" class="form-control">
+                                                        @unless ($playerSessionActive)
+                                                            <div class="form-row">
+                                                                <div class="form-group col-md-4">
+                                                                    <label for="note-timer-{{ $selectedTicket->id }}">Timer (minutes)</label>
+                                                                    <input type="number" id="note-timer-{{ $selectedTicket->id }}" name="timer_seconds" class="form-control" min="0" step="1" placeholder="Optional">
+                                                                </div>
+                                                                <div class="form-group col-md-4">
+                                                                    <label for="note-start-{{ $selectedTicket->id }}">Timer Started</label>
+                                                                    <input type="datetime-local" id="note-start-{{ $selectedTicket->id }}" name="timer_started_at" class="form-control">
+                                                                </div>
+                                                                <div class="form-group col-md-4">
+                                                                    <label for="note-stop-{{ $selectedTicket->id }}">Timer Stopped</label>
+                                                                    <input type="datetime-local" id="note-stop-{{ $selectedTicket->id }}" name="timer_stopped_at" class="form-control">
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <div class="custom-control custom-checkbox">
+                                                                    <input type="checkbox" class="custom-control-input" id="note-resolution-{{ $selectedTicket->id }}" name="is_resolution" value="1">
+                                                                    <label class="custom-control-label" for="note-resolution-{{ $selectedTicket->id }}">Mark as resolution</label>
+                                                                </div>
+                                                            </div>
+                                                        @endunless
+                                                        <div class="form-group">
+                                                            <label for="note-attachments-{{ $selectedTicket->id }}">Attachments <span class="text-muted">(images only)</span></label>
+                                                            <input type="file" id="note-attachments-{{ $selectedTicket->id }}" name="attachments[]" class="form-control-file" accept="image/*" multiple>
                                                         </div>
-                                                        <div class="form-group col-md-4">
-                                                            <label for="note-stop-{{ $selectedTicket->id }}">Timer Stopped</label>
-                                                            <input type="datetime-local" id="note-stop-{{ $selectedTicket->id }}" name="timer_stopped_at" class="form-control">
+                                                        <div class="text-right">
+                                                            <button type="submit" class="btn btn-primary btn-sm">Add Note</button>
                                                         </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <div class="custom-control custom-checkbox">
-                                                            <input type="checkbox" class="custom-control-input" id="note-resolution-{{ $selectedTicket->id }}" name="is_resolution" value="1">
-                                                            <label class="custom-control-label" for="note-resolution-{{ $selectedTicket->id }}">Mark as resolution</label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label for="note-attachments-{{ $selectedTicket->id }}">Attachments <span class="text-muted">(images only)</span></label>
-                                                        <input type="file" id="note-attachments-{{ $selectedTicket->id }}" name="attachments[]" class="form-control-file" accept="image/*" multiple>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <button type="submit" class="btn btn-primary btn-sm">Add Note</button>
-                                                    </div>
-                                                </form>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

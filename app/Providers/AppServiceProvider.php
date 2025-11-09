@@ -50,8 +50,35 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
 
+            /** @var Request $currentRequest */
+            $currentRequest = App::make(Request::class);
+            $tenantAccessOptions = TenantAccessManager::options($currentRequest);
+            $isPlayerSession = Session::has('active_player_id');
+
+            if ($isPlayerSession) {
+                $allowedCategoryKeys = ['overview', 'support_requests'];
+                $allowedPageKeys = ['overview', 'support_tickets'];
+
+                $tenantCategories = Collection::make($tenantCategories)
+                    ->filter(fn ($category, $key) => in_array($key, $allowedCategoryKeys, true))
+                    ->map(function ($category) use ($allowedPageKeys) {
+                        $category['pages'] = Collection::make($category['pages'] ?? [])
+                            ->filter(fn ($title, $pageKey) => in_array($pageKey, $allowedPageKeys, true))
+                            ->toArray();
+
+                        return $category;
+                    })
+                    ->filter(fn ($category) => ! empty($category['pages']))
+                    ->toArray();
+
+                $tenantPages = Collection::make($tenantPages)
+                    ->filter(fn ($title, $pageKey) => in_array($pageKey, $allowedPageKeys, true))
+                    ->toArray();
+            }
+
             $view->with('tenantPages', $tenantPages);
             $view->with('tenantPageCategories', $tenantCategories);
+            $view->with('isPlayerSession', $isPlayerSession);
 
             if (! Schema::hasTable('tenants') || ! Auth::check()) {
                 $view->with('availableTenants', Collection::make());
@@ -61,10 +88,6 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $user = Auth::user();
-
-            /** @var Request $currentRequest */
-            $currentRequest = App::make(Request::class);
-            $tenantAccessOptions = TenantAccessManager::options($currentRequest);
 
             if ($tenantAccessOptions->isNotEmpty()) {
                 $tenantIds = $tenantAccessOptions

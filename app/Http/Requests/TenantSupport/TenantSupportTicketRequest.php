@@ -9,7 +9,11 @@ use App\Models\User;
 use App\Support\TenantAccessManager;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Collection;
+use function collect;
 
+/**
+ * @mixin \Illuminate\Http\Request
+ */
 abstract class TenantSupportTicketRequest extends FormRequest
 {
     /**
@@ -28,7 +32,10 @@ abstract class TenantSupportTicketRequest extends FormRequest
             return true;
         }
 
-        $allowedTenantIds = TenantAccessManager::allowedTenantIds($this);
+        /** @var \Illuminate\Http\Request $baseRequest */
+        $baseRequest = $this;
+
+        $allowedTenantIds = TenantAccessManager::allowedTenantIds($baseRequest);
         if ($allowedTenantIds->isNotEmpty()) {
             return $allowedTenantIds->contains((int) $tenant->id);
         }
@@ -70,10 +77,10 @@ abstract class TenantSupportTicketRequest extends FormRequest
         $values = $this->input('assignees', []);
 
         if (! is_array($values)) {
-            return Collection::make();
+            return collect();
         }
 
-        return Collection::make($values)
+        return collect($values)
             ->filter(fn ($value) => is_string($value) && strpos($value, ':') !== false)
             ->map(function (string $value) {
                 [$typeKey, $idValue] = array_pad(explode(':', $value, 2), 2, null);
@@ -104,13 +111,19 @@ abstract class TenantSupportTicketRequest extends FormRequest
      */
     public function normalizedPlayerIds(): array
     {
+        $activePlayerId = (int) $this->session()->get('active_player_id');
+
+        if ($activePlayerId > 0) {
+            return [$activePlayerId];
+        }
+
         $players = $this->input('players', []);
 
         if (! is_array($players)) {
             return [];
         }
 
-        return Collection::make($players)
+        return collect($players)
             ->filter(fn ($value) => is_numeric($value))
             ->map(fn ($value) => (int) $value)
             ->unique()
@@ -132,7 +145,7 @@ abstract class TenantSupportTicketRequest extends FormRequest
                 return $user->tenantContact;
             }
 
-            return TenantContact::find($activeContactId);
+            return TenantContact::query()->find($activeContactId);
         }
 
         if ($user instanceof User && $user->tenantContact) {

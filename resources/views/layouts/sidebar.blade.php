@@ -18,6 +18,7 @@
 
         @php
             $sidebarUser = Auth::user();
+            $isPlayerSession = isset($isPlayerSession) ? (bool) $isPlayerSession : (bool) session('active_player_id');
             $canViewTenantPages = $sidebarUser && $sidebarUser->hasPermission('view_tenant_pages');
             $canManageTenants = $sidebarUser && $sidebarUser->hasPermission('manage_tenants');
             $canManageContacts = $sidebarUser && $sidebarUser->hasPermission('manage_contacts');
@@ -27,12 +28,14 @@
 
         <nav class="mt-2 flex-grow-1 d-flex flex-column">
             <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
-                <li class="nav-item">
-                    <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard</p>
-                    </a>
-                </li>
+                @unless($isPlayerSession)
+                    <li class="nav-item">
+                        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard</p>
+                        </a>
+                    </li>
+                @endunless
                 @if($canViewTenantPages && isset($tenantPageCategories) && count($tenantPageCategories) > 0)
                     @foreach($tenantPageCategories as $categoryKey => $category)
                         @php
@@ -96,7 +99,7 @@
                 </li>
             </ul>
         </nav>
-        @if($canManageTenants || $canManageContacts || $canManageAccess || $canManageApiKeys)
+    @if(! $isPlayerSession && ($canManageTenants || $canManageContacts || $canManageAccess || $canManageApiKeys))
             <nav class="mt-auto">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-item has-treeview {{ request()->routeIs('tenants.manage') || request()->routeIs('tenants.contacts.*') || request()->routeIs('admin.access.*') || request()->routeIs('admin.tenants.api-keys.*') ? 'menu-open' : '' }}">

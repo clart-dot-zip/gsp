@@ -84,6 +84,7 @@
                 'supportContacts' => $supportContacts,
                 'supportPlayers' => $supportPlayers,
                 'supportTicketPermissions' => $supportTicketPermissions,
+                'isPlayerSession' => $isPlayerSession ?? false,
             ])
             @break
 

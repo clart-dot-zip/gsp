@@ -37,6 +37,7 @@ class TenantSupportTicketNoteController extends Controller
         TenantSupportTicket $ticket
     ): RedirectResponse {
         $this->ensureTicketBelongsToTenant($tenant, $ticket);
+        $this->ensurePlayerHasTicketAccess($request, $ticket);
 
         if (! $request->hasContent()) {
             return redirect()
@@ -78,6 +79,7 @@ class TenantSupportTicketNoteController extends Controller
     ): RedirectResponse {
         $this->ensureTicketBelongsToTenant($tenant, $ticket);
         $this->ensureNoteBelongsToTicket($note, $ticket);
+        $this->ensurePlayerHasTicketAccess($request, $ticket);
 
         $user = $request->user();
 
@@ -120,6 +122,22 @@ class TenantSupportTicketNoteController extends Controller
     {
         if ((int) $note->tenant_support_ticket_id !== (int) $ticket->id) {
             abort(404);
+        }
+    }
+
+    /**
+     * Ensure that a tenant player can only interact with tickets they are linked to.
+     */
+    protected function ensurePlayerHasTicketAccess(Request $request, TenantSupportTicket $ticket): void
+    {
+        $activePlayerId = (int) $request->session()->get('active_player_id', 0);
+
+        if ($activePlayerId > 0) {
+            $hasAccess = $ticket->players()->where('tenant_player_id', $activePlayerId)->exists();
+
+            if (! $hasAccess) {
+                abort(403);
+            }
         }
     }
 

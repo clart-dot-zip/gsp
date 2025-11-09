@@ -23,8 +23,9 @@ class TenantSupportTicketStoreRequest extends TenantSupportTicketRequest
     {
         $tenant = $this->tenant();
         $tenantId = $tenant instanceof Tenant ? (int) $tenant->id : 0;
+        $isPlayerSession = $this->session()->has('active_player_id');
 
-        return [
+        $rules = [
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'priority' => ['nullable', 'string', Rule::in([
@@ -38,13 +39,20 @@ class TenantSupportTicketStoreRequest extends TenantSupportTicketRequest
             'players' => ['nullable', 'array'],
             'players.*' => ['integer', Rule::exists('tenant_players', 'id')->where('tenant_id', $tenantId)],
             'note_body' => ['nullable', 'string'],
-            'note_is_resolution' => ['nullable', 'boolean'],
-            'note_timer_seconds' => ['nullable', 'integer', 'min:0'],
-            'note_timer_started_at' => ['nullable', 'date'],
-            'note_timer_stopped_at' => ['nullable', 'date', 'after_or_equal:note_timer_started_at'],
+            'note_is_resolution' => $isPlayerSession ? ['prohibited'] : ['nullable', 'boolean'],
+            'note_timer_seconds' => $isPlayerSession ? ['prohibited'] : ['nullable', 'integer', 'min:0'],
+            'note_timer_started_at' => $isPlayerSession ? ['prohibited'] : ['nullable', 'date'],
+            'note_timer_stopped_at' => $isPlayerSession ? ['prohibited'] : ['nullable', 'date', 'after_or_equal:note_timer_started_at'],
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'image', 'max:5120'],
         ];
+
+        if ($isPlayerSession) {
+            $rules['assignees'] = ['prohibited'];
+            $rules['assignees.*'] = ['prohibited'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -52,12 +60,14 @@ class TenantSupportTicketStoreRequest extends TenantSupportTicketRequest
      */
     public function notePayload(): ?array
     {
+        $isPlayerSession = $this->session()->has('active_player_id');
+
         $payload = [
             'body' => $this->input('note_body'),
-            'is_resolution' => $this->boolean('note_is_resolution'),
-            'timer_seconds' => $this->input('note_timer_seconds'),
-            'timer_started_at' => $this->input('note_timer_started_at'),
-            'timer_stopped_at' => $this->input('note_timer_stopped_at'),
+            'is_resolution' => $isPlayerSession ? false : $this->boolean('note_is_resolution'),
+            'timer_seconds' => $isPlayerSession ? null : $this->input('note_timer_seconds'),
+            'timer_started_at' => $isPlayerSession ? null : $this->input('note_timer_started_at'),
+            'timer_stopped_at' => $isPlayerSession ? null : $this->input('note_timer_stopped_at'),
         ];
 
         if (
@@ -74,6 +84,10 @@ class TenantSupportTicketStoreRequest extends TenantSupportTicketRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->session()->has('active_player_id')) {
+            return;
+        }
+
         if (! $this->filled('priority')) {
             $this->merge([
                 'priority' => TenantSupportTicket::PRIORITY_NORMAL,

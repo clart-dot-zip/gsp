@@ -17,7 +17,7 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'body' => ['nullable', 'string'],
             'is_resolution' => ['nullable', 'boolean'],
             'timer_seconds' => ['nullable', 'integer', 'min:0'],
@@ -26,6 +26,15 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
             'attachments' => ['nullable', 'array'],
             'attachments.*' => ['file', 'image', 'max:5120'],
         ];
+
+        if ($this->session()->has('active_player_id')) {
+            $rules['is_resolution'] = ['prohibited'];
+            $rules['timer_seconds'] = ['prohibited'];
+            $rules['timer_started_at'] = ['prohibited'];
+            $rules['timer_stopped_at'] = ['prohibited'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -33,6 +42,16 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
      */
     public function payload(): array
     {
+        if ($this->session()->has('active_player_id')) {
+            return [
+                'body' => $this->input('body'),
+                'is_resolution' => false,
+                'timer_seconds' => null,
+                'timer_started_at' => null,
+                'timer_stopped_at' => null,
+            ];
+        }
+
         return [
             'body' => $this->input('body'),
             'is_resolution' => $this->boolean('is_resolution'),
@@ -53,6 +72,10 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
             return true;
         }
 
+        if ($this->session()->has('active_player_id')) {
+            return $this->hasFile('attachments');
+        }
+
         if (! is_null($payload['timer_seconds']) && (int) $payload['timer_seconds'] > 0) {
             return true;
         }
@@ -66,6 +89,10 @@ class TenantSupportTicketNoteStoreRequest extends TenantSupportTicketRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->session()->has('active_player_id')) {
+            return;
+        }
+
         if ($this->filled('timer_seconds')) {
             $minutes = (int) $this->input('timer_seconds');
             $this->merge([

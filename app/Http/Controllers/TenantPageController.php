@@ -43,12 +43,25 @@ class TenantPageController extends Controller
             abort(403);
         }
 
+        $isPlayerSession = $request->session()->has('active_player_id');
+        $activePlayerId = (int) $request->session()->get('active_player_id', 0);
+        $activePlayerId = $activePlayerId > 0 ? $activePlayerId : null;
+
         $categories = config('tenant.categories', []);
         $pages = [];
 
         foreach ($categories as $category) {
             foreach ($category['pages'] ?? [] as $pageKey => $pageTitle) {
                 $pages[$pageKey] = $pageTitle;
+            }
+        }
+
+        if ($isPlayerSession) {
+            $allowedPageKeys = ['overview', 'support_tickets'];
+            $pages = array_intersect_key($pages, array_flip($allowedPageKeys));
+
+            if (! in_array($page, $allowedPageKeys, true)) {
+                return redirect()->route('tenants.pages.show', ['page' => 'support_tickets']);
             }
         }
 
@@ -78,11 +91,18 @@ class TenantPageController extends Controller
         $supportTicketPermissions = [
             'can_manage' => $user && $user->hasPermission('manage_support_tickets'),
             'can_collaborate' => false,
+            'is_player' => $isPlayerSession,
+            'can_comment' => false,
         ];
 
         if ($user) {
             $supportTicketPermissions['can_collaborate'] = $supportTicketPermissions['can_manage']
                 || ($user->isTenantContact() && $user->tenantContact && (int) $user->tenantContact->tenant_id === (int) $tenant->id);
+        }
+
+        if ($isPlayerSession) {
+            $supportTicketPermissions['can_collaborate'] = false;
+            $supportTicketPermissions['can_comment'] = true;
         }
 
         if ($page === 'activity_logs') {
@@ -116,6 +136,12 @@ class TenantPageController extends Controller
                     ->withCount(['notes', 'players'])
                     ->forTenant($tenant)
                     ->orderByDesc('opened_at');
+
+                if ($isPlayerSession && $activePlayerId) {
+                    $supportTicketQuery->whereHas('players', function ($query) use ($activePlayerId) {
+                        $query->where('tenant_player_id', $activePlayerId);
+                    });
+                }
 
                 if (! empty($supportTicketFilters['status'])) {
                     $supportTicketQuery->where('status', $supportTicketFilters['status']);
@@ -175,7 +201,16 @@ class TenantPageController extends Controller
                     ->get();
 
                 $supportContacts = $tenant->contacts()->with('role')->get();
-                $supportPlayers = $tenant->players()->get();
+                $supportPlayers = $tenant->players()
+                    ->when($isPlayerSession && $activePlayerId, fn ($query) => $query->where('id', $activePlayerId))
+                    ->get();
+
+                if ($isPlayerSession && $selectedTicket && $activePlayerId) {
+                    $selectedTicket->loadMissing('players');
+                    if (! $selectedTicket->players->contains('id', $activePlayerId)) {
+                        $selectedTicket = null;
+                    }
+                }
                 break;
 
             case 'support_performance':
@@ -229,6 +264,7 @@ class TenantPageController extends Controller
             'supportPlayers' => $supportPlayers,
             'supportTicketPermissions' => $supportTicketPermissions,
             'supportTicketStats' => $supportTicketStats,
+            'isPlayerSession' => $isPlayerSession,
         ]);
     }
 

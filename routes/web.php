@@ -20,6 +20,7 @@ use App\Http\Controllers\TenantSupport\TenantSupportTicketController;
 use App\Http\Controllers\TenantSupport\TenantSupportTicketNoteController;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -30,11 +31,19 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware(['auth', 'tenant.activity'])->group(function () {
-    Route::get('/', function () {
+    Route::get('/', function (Request $request) {
+        if ($request->session()->has('active_player_id')) {
+            return redirect()->route('tenants.pages.show', ['page' => 'support_tickets']);
+        }
+
         return view('dashboard');
     })->name('dashboard')->middleware('permission:view_dashboard');
 
-    Route::get('/dashboard', function () {
+    Route::get('/dashboard', function (Request $request) {
+        if ($request->session()->has('active_player_id')) {
+            return redirect()->route('tenants.pages.show', ['page' => 'support_tickets']);
+        }
+
         return view('dashboard');
     })->name('dashboard')->middleware('permission:view_dashboard');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

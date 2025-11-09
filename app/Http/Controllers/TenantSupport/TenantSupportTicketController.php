@@ -15,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use function collect;
 
 class TenantSupportTicketController extends Controller
 {
@@ -36,8 +37,10 @@ class TenantSupportTicketController extends Controller
         $user = $request->user();
         $contact = $request->actingTenantContact();
         $disk = Config::get('filesystems.default', 'public');
+        $activePlayerId = (int) $request->session()->get('active_player_id', 0);
+        $activePlayerId = $activePlayerId > 0 ? $activePlayerId : null;
 
-        $ticket = DB::transaction(function () use ($request, $tenant, $user, $contact, $disk) {
+        $ticket = DB::transaction(function () use ($request, $tenant, $user, $contact, $disk, $activePlayerId) {
             $ticket = new TenantSupportTicket([
                 'tenant_id' => $tenant->id,
                 'subject' => $request->input('subject'),
@@ -55,14 +58,19 @@ class TenantSupportTicketController extends Controller
 
             $ticket->save();
 
-            $playerIds = $request->normalizedPlayerIds();
+            if ($activePlayerId) {
+                $playerIds = [$activePlayerId];
+            } else {
+                $playerIds = $request->normalizedPlayerIds();
+            }
+
             if (! empty($playerIds)) {
                 $ticket->players()->syncWithPivotValues($playerIds, [
                     'tenant_id' => $tenant->id,
                 ]);
             }
 
-            $assignees = $request->normalizedAssignees();
+            $assignees = $activePlayerId ? collect() : $request->normalizedAssignees();
             if ($assignees->isNotEmpty()) {
                 $ticket->syncAssignees($assignees);
             }
