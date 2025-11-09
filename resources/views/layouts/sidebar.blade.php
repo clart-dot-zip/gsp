@@ -16,8 +16,8 @@
             </div>
         @endauth
 
-        <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+        <nav class="mt-2 flex-grow-1 d-flex flex-column">
+            <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
                 <li class="nav-item">
                     <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -37,8 +37,9 @@
                             @foreach($tenantPages as $pageKey => $pageTitle)
                                 <li class="nav-item">
                                     <a
-                                        href="{{ route('tenants.pages.show', $pageKey) }}"
+                                        href="{{ empty($currentTenant) ? '#' : route('tenants.pages.show', $pageKey) }}"
                                         class="nav-link {{ request()->routeIs('tenants.pages.show') && request()->route('page') === $pageKey ? 'active' : '' }} {{ empty($currentTenant) ? 'disabled text-muted' : '' }}"
+                                        @if(empty($currentTenant)) aria-disabled="true" tabindex="-1" onclick="return false;" @endif
                                     >
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>{{ $pageTitle }}</p>
