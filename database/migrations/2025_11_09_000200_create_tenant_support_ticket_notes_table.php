@@ -10,6 +10,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        Schema::dropIfExists('tenant_support_ticket_notes');
+
         Schema::create('tenant_support_ticket_notes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
