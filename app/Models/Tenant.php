@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
  * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantGroup> $permissionGroups
  * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantPermission> $permissionDefinitions
  * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantPlayer> $players
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantSupportTicket> $supportTickets
  *
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant query()
  *
@@ -98,6 +99,14 @@ class Tenant extends Model
     public function players(): HasMany
     {
         return $this->hasMany(TenantPlayer::class)->orderBy('display_name');
+    }
+
+    /**
+     * @return HasMany<TenantSupportTicket>
+     */
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(TenantSupportTicket::class)->latest('opened_at');
     }
 
     /**

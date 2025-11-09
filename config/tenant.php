@@ -38,5 +38,13 @@ return [
                 'activity_logs' => 'Activity Logs',
             ],
         ],
+        'support_requests' => [
+            'title' => 'Support Requests',
+            'icon' => 'fas fa-life-ring',
+            'pages' => [
+                'support_tickets' => 'Staff Help Requests',
+                'support_performance' => 'Performance',
+            ],
+        ],
     ],
 ];

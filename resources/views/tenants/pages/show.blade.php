@@ -74,6 +74,26 @@
             ])
             @break
 
+        @case('support_tickets')
+            @include('tenants.pages.sections.support-tickets', [
+                'tenant' => $tenant,
+                'supportTickets' => $supportTickets,
+                'supportTicketFilters' => $supportTicketFilters,
+                'supportTicketHighlightId' => $supportTicketHighlightId,
+                'supportAgents' => $supportAgents,
+                'supportContacts' => $supportContacts,
+                'supportPlayers' => $supportPlayers,
+                'supportTicketPermissions' => $supportTicketPermissions,
+            ])
+            @break
+
+        @case('support_performance')
+            @include('tenants.pages.sections.support-performance', [
+                'tenant' => $tenant,
+                'supportTicketStats' => $supportTicketStats,
+            ])
+            @break
+
         @default
             @include('tenants.pages.sections.placeholder', [
                 'tenant' => $tenant,

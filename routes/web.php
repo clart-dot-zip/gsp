@@ -14,6 +14,9 @@ use App\Http\Controllers\TenantPermissions\TenantGroupPermissionController;
 use App\Http\Controllers\TenantPermissions\TenantPermissionController;
 use App\Http\Controllers\TenantPermissions\TenantPlayerController;
 use App\Http\Controllers\TenantPermissions\TenantPlayerGroupController;
+use App\Http\Controllers\TenantSupport\TenantSupportTicketAttachmentController;
+use App\Http\Controllers\TenantSupport\TenantSupportTicketController;
+use App\Http\Controllers\TenantSupport\TenantSupportTicketNoteController;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +70,18 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
 
             Route::post('/players/{player}/groups', [TenantPlayerGroupController::class, 'attach'])->name('players.groups.attach');
             Route::delete('/players/{player}/groups/{group}', [TenantPlayerGroupController::class, 'detach'])->name('players.groups.detach');
+        });
+
+        Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->middleware('permission:view_tenant_pages')->group(function () {
+            Route::post('/tickets', [TenantSupportTicketController::class, 'store'])->name('tickets.store');
+            Route::put('/tickets/{ticket}', [TenantSupportTicketController::class, 'update'])->name('tickets.update');
+            Route::post('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'claim'])->name('tickets.claim');
+            Route::delete('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'release'])->name('tickets.release');
+
+            Route::post('/tickets/{ticket}/notes', [TenantSupportTicketNoteController::class, 'store'])->name('tickets.notes.store');
+            Route::delete('/tickets/{ticket}/notes/{note}', [TenantSupportTicketNoteController::class, 'destroy'])->name('tickets.notes.destroy');
+
+            Route::delete('/tickets/{ticket}/attachments/{attachment}', [TenantSupportTicketAttachmentController::class, 'destroy'])->name('tickets.attachments.destroy');
         });
     });
 
