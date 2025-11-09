@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\TenantContact;
 use App\Models\User;
+use App\Services\SteamOpenIdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -14,6 +15,13 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    protected SteamOpenIdService $steamOpenId;
+
+    public function __construct(SteamOpenIdService $steamOpenId)
+    {
+        $this->steamOpenId = $steamOpenId;
+    }
+
     public function redirect()
     {
         return Socialite::driver('authentik')->redirect();
@@ -42,14 +50,19 @@ class AuthController extends Controller
 
     public function redirectToSteam()
     {
-        return Socialite::driver('steam')->redirect();
+        return Redirect::away($this->steamOpenId->getRedirectUrl());
     }
 
     public function handleSteamCallback(Request $request)
     {
         try {
-            $steamUser = Socialite::driver('steam')->user();
-            $steamId = (string) $steamUser->getId();
+            $steamId = $this->steamOpenId->validate($request);
+
+            if (! $steamId) {
+                return Redirect::route('login')->withErrors([
+                    'error' => 'Steam authentication could not be validated.',
+                ]);
+            }
 
             $contact = TenantContact::where('steam_id', $steamId)->with('tenant')->first();
 
@@ -62,9 +75,8 @@ class AuthController extends Controller
             $user = User::updateOrCreate([
                 'steam_id' => $steamId,
             ], [
-                'name' => $contact->name ?? $steamUser->getNickname() ?? 'Steam User',
+                'name' => $contact->name ?: 'Steam User',
                 'email' => $contact->email ?: 'steam-'.$steamId.'@auth.local',
-                'avatar' => $steamUser->getAvatar(),
             ]);
 
             $user->tenant_contact_id = $contact->id;

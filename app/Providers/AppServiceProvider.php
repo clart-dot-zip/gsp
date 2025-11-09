@@ -29,7 +29,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('authentik', \SocialiteProviders\Authentik\Provider::class);
-            $event->extendSocialite('steam', \SocialiteProviders\Steam\Provider::class);
         });
         // Share Google Maps API key with all views
         View::share('googleMapsApiKey', env('GOOGLE_MAPS_API_KEY'));
