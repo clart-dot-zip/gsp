@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\TenantActivityLog;
 use App\Models\TenantContact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -48,6 +49,14 @@ class Tenant extends Model
     public function contacts()
     {
         return $this->hasMany(TenantContact::class)->orderBy('name');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(TenantActivityLog::class)->latest();
     }
 
     /**

@@ -33,6 +33,13 @@
             ])
             @break
 
+        @case('activity_logs')
+            @include('tenants.pages.sections.activity-logs', [
+                'tenant' => $tenant,
+                'activityLogs' => $activityLogs,
+            ])
+            @break
+
         @case('overview')
             @include('tenants.pages.sections.overview', ['tenant' => $tenant])
             @break

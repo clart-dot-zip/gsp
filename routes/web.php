@@ -19,7 +19,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/auth/steam/callback', [AuthController::class, 'handleSteamCallback'])->name('login.steam.callback');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'tenant.activity'])->group(function () {
     Route::get('/', function () {
         return view('dashboard');
     })->name('dashboard')->middleware('permission:view_dashboard');

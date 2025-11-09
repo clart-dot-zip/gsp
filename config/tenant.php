@@ -25,6 +25,7 @@ return [
             'icon' => 'fas fa-id-card',
             'pages' => [
                 'contacts' => 'Key Contacts',
+                'activity_logs' => 'Activity Logs',
             ],
         ],
     ],

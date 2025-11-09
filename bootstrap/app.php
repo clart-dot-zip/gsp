@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\LogTenantActivity;
 use App\Http\Middleware\RedirectIfUnauthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => RedirectIfUnauthenticated::class,
             'permission' => EnsurePermission::class,
+            'tenant.activity' => LogTenantActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

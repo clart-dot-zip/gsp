@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tenant;
+use App\Models\TenantActivityLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -49,11 +50,22 @@ class TenantPageController extends Controller
             }
         }
 
+        $activityLogs = null;
+
+        if ($page === 'activity_logs') {
+            $activityLogs = TenantActivityLog::with(['user'])
+                ->where('tenant_id', $tenant->id)
+                ->latest()
+                ->paginate(25)
+                ->appends($request->query());
+        }
+
         return view('tenants.pages.show', [
             'tenant' => $tenant,
             'pageKey' => $page,
             'pageTitle' => $pages[$page],
             'contacts' => $tenant->contacts,
+            'activityLogs' => $activityLogs,
         ]);
     }
 }
