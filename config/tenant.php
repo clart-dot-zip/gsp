@@ -20,6 +20,16 @@ return [
                 'logs' => 'Logs',
             ],
         ],
+        'permissions' => [
+            'title' => 'Permissions',
+            'icon' => 'fas fa-user-shield',
+            'pages' => [
+                'permissions_overview' => 'Overview',
+                'permissions_groups' => 'Groups',
+                'permissions_group_permissions' => 'Group Permissions',
+                'permissions_users' => 'Users',
+            ],
+        ],
         'tenant_admin' => [
             'title' => 'Tenant Admin',
             'icon' => 'fas fa-id-card',

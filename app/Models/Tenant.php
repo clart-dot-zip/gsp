@@ -7,6 +7,7 @@ use App\Models\TenantApiKey;
 use App\Models\TenantContact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -14,6 +15,9 @@ use Illuminate\Support\Str;
  * @property string $name
  * @property string|null $slug
  * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantContact> $contacts
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantGroup> $permissionGroups
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantPermission> $permissionDefinitions
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantPlayer> $players
  *
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant query()
  *
@@ -50,6 +54,30 @@ class Tenant extends Model
     public function contacts()
     {
         return $this->hasMany(TenantContact::class)->orderBy('name');
+    }
+
+    /**
+     * @return HasMany<TenantGroup>
+     */
+    public function permissionGroups(): HasMany
+    {
+        return $this->hasMany(TenantGroup::class)->orderBy('name');
+    }
+
+    /**
+     * @return HasMany<TenantPermission>
+     */
+    public function permissionDefinitions(): HasMany
+    {
+        return $this->hasMany(TenantPermission::class)->orderBy('name');
+    }
+
+    /**
+     * @return HasMany<TenantPlayer>
+     */
+    public function players(): HasMany
+    {
+        return $this->hasMany(TenantPlayer::class)->orderBy('display_name');
     }
 
     /**

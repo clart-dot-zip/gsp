@@ -51,6 +51,10 @@ class TenantPageController extends Controller
         }
 
         $activityLogs = null;
+        $permissionGroups = collect();
+        $permissionDefinitions = collect();
+        $tenantPlayers = collect();
+        $permissionsOverview = null;
 
         if ($page === 'activity_logs') {
             $activityLogs = TenantActivityLog::with(['user'])
@@ -60,12 +64,53 @@ class TenantPageController extends Controller
                 ->appends($request->query());
         }
 
+        switch ($page) {
+            case 'permissions_overview':
+                $permissionsOverview = [
+                    'group_count' => $tenant->permissionGroups()->count(),
+                    'permission_count' => $tenant->permissionDefinitions()->count(),
+                    'player_count' => $tenant->players()->count(),
+                ];
+                break;
+
+            case 'permissions_groups':
+                $permissionGroups = $tenant->permissionGroups()
+                    ->with(['parents', 'children', 'permissions'])
+                    ->withCount('players')
+                    ->orderBy('name')
+                    ->get();
+                break;
+
+            case 'permissions_group_permissions':
+                $permissionGroups = $tenant->permissionGroups()
+                    ->with('permissions')
+                    ->orderBy('name')
+                    ->get();
+                $permissionDefinitions = $tenant->permissionDefinitions()
+                    ->withCount('groups')
+                    ->orderBy('name')
+                    ->get();
+                break;
+
+            case 'permissions_users':
+                $tenantPlayers = $tenant->players()
+                    ->with('groups')
+                    ->orderBy('display_name')
+                    ->get();
+                $permissionGroups = $tenant->permissionGroups()->orderBy('name')->get();
+                break;
+        }
+
         return view('tenants.pages.show', [
             'tenant' => $tenant,
             'pageKey' => $page,
             'pageTitle' => $pages[$page],
             'contacts' => $tenant->contacts,
             'activityLogs' => $activityLogs,
+            'permissionGroups' => $permissionGroups,
+            'permissionDefinitions' => $permissionDefinitions,
+            'tenantPlayers' => $tenantPlayers,
+            'permissionsOverview' => $permissionsOverview,
         ]);
     }
 }

@@ -44,6 +44,36 @@
             @include('tenants.pages.sections.overview', ['tenant' => $tenant])
             @break
 
+        @case('permissions_overview')
+            @include('tenants.pages.sections.permissions-overview', [
+                'tenant' => $tenant,
+                'permissionsOverview' => $permissionsOverview,
+            ])
+            @break
+
+        @case('permissions_groups')
+            @include('tenants.pages.sections.permissions-groups', [
+                'tenant' => $tenant,
+                'permissionGroups' => $permissionGroups,
+            ])
+            @break
+
+        @case('permissions_group_permissions')
+            @include('tenants.pages.sections.permissions-group-permissions', [
+                'tenant' => $tenant,
+                'permissionGroups' => $permissionGroups,
+                'permissionDefinitions' => $permissionDefinitions,
+            ])
+            @break
+
+        @case('permissions_users')
+            @include('tenants.pages.sections.permissions-users', [
+                'tenant' => $tenant,
+                'tenantPlayers' => $tenantPlayers,
+                'permissionGroups' => $permissionGroups,
+            ])
+            @break
+
         @default
             @include('tenants.pages.sections.placeholder', [
                 'tenant' => $tenant,

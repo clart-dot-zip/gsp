@@ -9,6 +9,11 @@ use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantSelectionController;
+use App\Http\Controllers\TenantPermissions\TenantGroupController;
+use App\Http\Controllers\TenantPermissions\TenantGroupPermissionController;
+use App\Http\Controllers\TenantPermissions\TenantPermissionController;
+use App\Http\Controllers\TenantPermissions\TenantPlayerController;
+use App\Http\Controllers\TenantPermissions\TenantPlayerGroupController;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +45,27 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
     Route::post('/tenants/{tenant}/contacts', [TenantContactController::class, 'store'])->name('tenants.contacts.store')->middleware('permission:manage_contacts');
     Route::put('/tenants/{tenant}/contacts/{contact}', [TenantContactController::class, 'update'])->name('tenants.contacts.update')->middleware('permission:manage_contacts');
     Route::delete('/tenants/{tenant}/contacts/{contact}', [TenantContactController::class, 'destroy'])->name('tenants.contacts.destroy')->middleware('permission:manage_contacts');
+
+    Route::scopeBindings()->group(function () {
+        Route::prefix('/tenants/{tenant}/permissions')->name('tenants.permissions.')->middleware('permission:manage_tenant_permissions')->group(function () {
+            Route::post('/groups', [TenantGroupController::class, 'store'])->name('groups.store');
+            Route::put('/groups/{group}', [TenantGroupController::class, 'update'])->name('groups.update');
+            Route::delete('/groups/{group}', [TenantGroupController::class, 'destroy'])->name('groups.destroy');
+
+            Route::post('/groups/{group}/permissions', [TenantGroupPermissionController::class, 'sync'])->name('groups.permissions.sync');
+
+            Route::post('/definitions', [TenantPermissionController::class, 'store'])->name('definitions.store');
+            Route::put('/definitions/{permission}', [TenantPermissionController::class, 'update'])->name('definitions.update');
+            Route::delete('/definitions/{permission}', [TenantPermissionController::class, 'destroy'])->name('definitions.destroy');
+
+            Route::post('/players', [TenantPlayerController::class, 'store'])->name('players.store');
+            Route::put('/players/{player}', [TenantPlayerController::class, 'update'])->name('players.update');
+            Route::delete('/players/{player}', [TenantPlayerController::class, 'destroy'])->name('players.destroy');
+
+            Route::post('/players/{player}/groups', [TenantPlayerGroupController::class, 'attach'])->name('players.groups.attach');
+            Route::delete('/players/{player}/groups/{group}', [TenantPlayerGroupController::class, 'detach'])->name('players.groups.detach');
+        });
+    });
 
     Route::post('/contact-roles', [ContactRoleController::class, 'store'])->name('contact-roles.store')->middleware('permission:manage_contacts');
     Route::put('/contact-roles/{role}', [ContactRoleController::class, 'update'])->name('contact-roles.update')->middleware('permission:manage_contacts');
