@@ -25,8 +25,5 @@
                 'contacts' => $contacts ?? collect(),
             ])
             @break
-
-        @default
-            @include('tenants.pages.sections.insights', ['tenant' => $tenant, 'pageTitle' => $pageTitle])
     @endswitch
 </x-app-layout>
