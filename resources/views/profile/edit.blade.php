@@ -1,14 +1,31 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
+        Profile
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">{{ __('Profile Information') }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>{{ __('Name') }}</label>
+                        <p class="form-control-static">{{ Auth::user()->name }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ __('Email') }}</label>
+                        <p class="form-control-static">{{ Auth::user()->email }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-danger">
+                <div class="card-header">
+                    <h3 class="card-title">{{ __('Delete Account') }}</h3>
+                </div>
+                <div class="card-body">
                     @include('profile.partials.delete-user-form')
                 </div>
             </div>
