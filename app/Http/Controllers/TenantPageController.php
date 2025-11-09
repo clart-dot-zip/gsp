@@ -91,6 +91,12 @@ class TenantPageController extends Controller
                     ->orderBy('name')
                     ->get();
                 break;
+            case 'permissions_definitions':
+                $permissionDefinitions = $tenant->permissionDefinitions()
+                    ->withCount('groups')
+                    ->orderBy('name')
+                    ->get();
+                break;
 
             case 'permissions_users':
                 $tenantPlayers = $tenant->players()

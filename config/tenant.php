@@ -27,6 +27,7 @@ return [
                 'permissions_overview' => 'Overview',
                 'permissions_groups' => 'Groups',
                 'permissions_group_permissions' => 'Group Permissions',
+                'permissions_definitions' => 'Definitions',
                 'permissions_users' => 'Users',
             ],
         ],
