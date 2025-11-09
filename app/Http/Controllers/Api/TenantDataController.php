@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Group;
-use App\Models\Permission;
 use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,44 +49,6 @@ class TenantDataController extends Controller
             });
 
         return new JsonResponse(['data' => $contacts]);
-    }
-
-    public function groups(): JsonResponse
-    {
-        $groups = Group::with('permissions:id,slug,name')
-            ->orderBy('name')
-            ->get()
-            ->map(static function (Group $group) {
-                return [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'slug' => $group->slug,
-                    'permissions' => $group->permissions->map(static function (Permission $permission) {
-                        return [
-                            'id' => $permission->id,
-                            'name' => $permission->name,
-                            'slug' => $permission->slug,
-                        ];
-                    })->all(),
-                ];
-            });
-
-        return new JsonResponse(['data' => $groups]);
-    }
-
-    public function permissions(): JsonResponse
-    {
-        $permissions = Permission::orderBy('name')
-            ->get()
-            ->map(static function (Permission $permission) {
-                return [
-                    'id' => $permission->id,
-                    'name' => $permission->name,
-                    'slug' => $permission->slug,
-                ];
-            });
-
-        return new JsonResponse(['data' => $permissions]);
     }
 
     public function logs(Request $request): JsonResponse
