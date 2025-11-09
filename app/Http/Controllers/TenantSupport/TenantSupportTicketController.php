@@ -57,7 +57,9 @@ class TenantSupportTicketController extends Controller
 
             $playerIds = $request->normalizedPlayerIds();
             if (! empty($playerIds)) {
-                $ticket->players()->sync($playerIds);
+                $ticket->players()->syncWithPivotValues($playerIds, [
+                    'tenant_id' => $tenant->id,
+                ]);
             }
 
             $assignees = $request->normalizedAssignees();
@@ -114,7 +116,9 @@ class TenantSupportTicketController extends Controller
             $ticket->save();
 
             $playerIds = $request->normalizedPlayerIds();
-            $ticket->players()->sync($playerIds);
+            $ticket->players()->syncWithPivotValues($playerIds, [
+                'tenant_id' => $ticket->tenant_id,
+            ]);
 
             $ticket->syncAssignees($request->normalizedAssignees());
         });
