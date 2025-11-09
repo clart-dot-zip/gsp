@@ -68,9 +68,5 @@
                 </div>
             </a>
         </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white/60 p-4 text-xs text-slate-500">
-            <p><strong>Heads up:</strong> Steam authentication relies on OpenID. Ensure this site is accessible over HTTPS with the same domain you use in your Steam application settings.</p>
-        </div>
     </div>
 </x-guest-layout>
