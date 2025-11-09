@@ -98,7 +98,7 @@
                                     </h3>
                                 </div>
                                 <div id="collapse-{{ $group->id }}" class="collapse" data-parent="#group-permissions">
-                                    <div class="card-body">
+                                    <div class="card-body text-body">
                                         <form method="POST" action="{{ route('admin.access.groups.permissions.sync', $group) }}">
                                             @csrf
                                             @method('PUT')
