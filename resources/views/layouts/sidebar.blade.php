@@ -22,6 +22,7 @@
             $canManageTenants = $sidebarUser && $sidebarUser->hasPermission('manage_tenants');
             $canManageContacts = $sidebarUser && $sidebarUser->hasPermission('manage_contacts');
             $canManageAccess = $sidebarUser && $sidebarUser->hasPermission('manage_access');
+            $canManageApiKeys = $sidebarUser && $sidebarUser->hasPermission('manage_api_keys');
         @endphp
 
         <nav class="mt-2 flex-grow-1 d-flex flex-column">
@@ -95,10 +96,10 @@
                 </li>
             </ul>
         </nav>
-        @if($canManageTenants || $canManageContacts || $canManageAccess)
+        @if($canManageTenants || $canManageContacts || $canManageAccess || $canManageApiKeys)
             <nav class="mt-auto">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                    <li class="nav-item has-treeview {{ request()->routeIs('tenants.manage') || request()->routeIs('tenants.contacts.*') || request()->routeIs('admin.access.*') ? 'menu-open' : '' }}">
+                    <li class="nav-item has-treeview {{ request()->routeIs('tenants.manage') || request()->routeIs('tenants.contacts.*') || request()->routeIs('admin.access.*') || request()->routeIs('admin.tenants.api-keys.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link">
                             <i class="nav-icon fas fa-tools"></i>
                             <p>
@@ -128,6 +129,14 @@
                                     <a href="{{ route('admin.access.index') }}" class="nav-link {{ request()->routeIs('admin.access.*') ? 'active' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Access Control</p>
+                                    </a>
+                                </li>
+                            @endif
+                            @if($canManageApiKeys)
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.tenants.api-keys.index') }}" class="nav-link {{ request()->routeIs('admin.tenants.api-keys.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Tenant API Keys</p>
                                     </a>
                                 </li>
                             @endif

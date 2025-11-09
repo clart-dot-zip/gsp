@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccessController;
+use App\Http\Controllers\Admin\TenantApiKeyController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ContactRoleController;
 use App\Http\Controllers\ProfileController;
@@ -49,6 +50,10 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
     Route::delete('/admin/access/users/{user}/groups/{group}', [AccessController::class, 'detachGroup'])->name('admin.access.users.groups.detach')->middleware('permission:manage_access');
     Route::post('/admin/access/groups', [AccessController::class, 'storeGroup'])->name('admin.access.groups.store')->middleware('permission:manage_access');
     Route::put('/admin/access/groups/{group}/permissions', [AccessController::class, 'syncPermissions'])->name('admin.access.groups.permissions.sync')->middleware('permission:manage_access');
+
+    Route::get('/admin/tenants/api-keys', [TenantApiKeyController::class, 'index'])->name('admin.tenants.api-keys.index')->middleware('permission:manage_api_keys');
+    Route::post('/admin/tenants/{tenant}/api-keys', [TenantApiKeyController::class, 'store'])->name('admin.tenants.api-keys.store')->middleware('permission:manage_api_keys');
+    Route::delete('/admin/tenants/{tenant}/api-keys', [TenantApiKeyController::class, 'destroy'])->name('admin.tenants.api-keys.destroy')->middleware('permission:manage_api_keys');
     
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

@@ -21,6 +21,7 @@ class AccessControlSeeder extends Seeder
             ['slug' => 'manage_tenants', 'name' => 'Manage Tenants'],
             ['slug' => 'manage_contacts', 'name' => 'Manage Contacts'],
             ['slug' => 'manage_access', 'name' => 'Manage Access Control'],
+            ['slug' => 'manage_api_keys', 'name' => 'Manage Tenant API Keys'],
         ];
 
         foreach ($permissions as $permissionData) {

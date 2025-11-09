@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\TenantActivityLog;
+use App\Models\TenantApiKey;
 use App\Models\TenantContact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,6 +58,22 @@ class Tenant extends Model
     public function activityLogs()
     {
         return $this->hasMany(TenantActivityLog::class)->latest();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function apiKeys()
+    {
+        return $this->hasMany(TenantApiKey::class);
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function dataCollectorKey()
+    {
+        return $this->hasOne(TenantApiKey::class)->where('key_type', TenantApiKey::TYPE_DATA_COLLECTOR);
     }
 
     /**
