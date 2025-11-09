@@ -55,7 +55,7 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
     Route::post('/tenants/select', TenantSelectionController::class)->name('tenants.select')->middleware('permission:manage_tenants');
     Route::get('/tenant-access', [TenantAccessController::class, 'show'])->name('tenant-access.show');
     Route::post('/tenant-access', [TenantAccessController::class, 'update'])->name('tenant-access.update');
-    Route::get('/tenant/pages/{page}', [TenantPageController::class, 'show'])->name('tenants.pages.show')->middleware('tenant.pages.access');
+    Route::get('/tenant/pages/{page}', [TenantPageController::class, 'show'])->name('tenants.pages.show')->middleware('permission:view_tenant_pages');
     Route::get('/tenants/{tenant}/contacts', [TenantContactController::class, 'index'])->name('tenants.contacts.index')->middleware('permission:manage_contacts');
     Route::post('/tenants/{tenant}/contacts', [TenantContactController::class, 'store'])->name('tenants.contacts.store')->middleware('permission:manage_contacts');
     Route::put('/tenants/{tenant}/contacts/{contact}', [TenantContactController::class, 'update'])->name('tenants.contacts.update')->middleware('permission:manage_contacts');
@@ -84,7 +84,7 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
             Route::delete('/players/{player}/groups/{group}', [TenantPlayerGroupController::class, 'detach'])->name('players.groups.detach');
         });
 
-    Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->middleware('tenant.pages.access')->group(function () {
+    Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->middleware('permission:view_tenant_pages')->group(function () {
             Route::post('/tickets', [TenantSupportTicketController::class, 'store'])->name('tickets.store');
             Route::put('/tickets/{ticket}', [TenantSupportTicketController::class, 'update'])->name('tickets.update');
             Route::post('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'claim'])->name('tickets.claim');

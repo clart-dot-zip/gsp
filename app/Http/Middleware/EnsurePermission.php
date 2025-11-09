@@ -14,6 +14,10 @@ class EnsurePermission
      */
     public function handle(Request $request, Closure $next, string $permission): Response
     {
+        if ($permission === 'view_tenant_pages' && $request->session()->has('active_player_id')) {
+            return $next($request);
+        }
+
         $user = Auth::user();
 
         if (! $user || (method_exists($user, 'hasPermission') && ! $user->hasPermission($permission))) {
