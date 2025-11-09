@@ -65,6 +65,16 @@ class Tenant extends Model
     }
 
     /**
+     * Alias for permissionGroups to maintain backwards compatibility.
+     *
+     * @return HasMany<TenantGroup>
+     */
+    public function groups(): HasMany
+    {
+        return $this->permissionGroups();
+    }
+
+    /**
      * @return HasMany<TenantPermission>
      */
     public function permissionDefinitions(): HasMany
