@@ -30,7 +30,7 @@ class TenantGroupPermissionController extends Controller
 
         $group->permissions()->sync($permissionIds);
 
-        return Redirect::route('tenants.pages.show', ['page' => 'permissions_group_permissions'])
+        return Redirect::route('tenants.permissions.groups.edit', ['tenant' => $tenant, 'group' => $group])
             ->with('status', 'Group permissions updated.');
     }
 

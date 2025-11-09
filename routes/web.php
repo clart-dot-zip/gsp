@@ -48,16 +48,19 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
 
     Route::scopeBindings()->group(function () {
         Route::prefix('/tenants/{tenant}/permissions')->name('tenants.permissions.')->middleware('permission:manage_tenant_permissions')->group(function () {
+            Route::get('/groups/{group}', [TenantGroupController::class, 'edit'])->name('groups.edit');
             Route::post('/groups', [TenantGroupController::class, 'store'])->name('groups.store');
             Route::put('/groups/{group}', [TenantGroupController::class, 'update'])->name('groups.update');
             Route::delete('/groups/{group}', [TenantGroupController::class, 'destroy'])->name('groups.destroy');
 
             Route::post('/groups/{group}/permissions', [TenantGroupPermissionController::class, 'sync'])->name('groups.permissions.sync');
 
+            Route::get('/definitions/{permission}', [TenantPermissionController::class, 'edit'])->name('definitions.edit');
             Route::post('/definitions', [TenantPermissionController::class, 'store'])->name('definitions.store');
             Route::put('/definitions/{permission}', [TenantPermissionController::class, 'update'])->name('definitions.update');
             Route::delete('/definitions/{permission}', [TenantPermissionController::class, 'destroy'])->name('definitions.destroy');
 
+            Route::get('/players/{player}', [TenantPlayerController::class, 'edit'])->name('players.edit');
             Route::post('/players', [TenantPlayerController::class, 'store'])->name('players.store');
             Route::put('/players/{player}', [TenantPlayerController::class, 'update'])->name('players.update');
             Route::delete('/players/{player}', [TenantPlayerController::class, 'destroy'])->name('players.destroy');

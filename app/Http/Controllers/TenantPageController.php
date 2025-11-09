@@ -75,15 +75,15 @@ class TenantPageController extends Controller
 
             case 'permissions_groups':
                 $permissionGroups = $tenant->permissionGroups()
-                    ->with(['parents', 'children', 'permissions'])
-                    ->withCount('players')
+                    ->with(['parents:id,name'])
+                    ->withCount(['players', 'permissions'])
                     ->orderBy('name')
                     ->get();
                 break;
 
             case 'permissions_group_permissions':
                 $permissionGroups = $tenant->permissionGroups()
-                    ->with('permissions')
+                    ->withCount(['permissions', 'players'])
                     ->orderBy('name')
                     ->get();
                 $permissionDefinitions = $tenant->permissionDefinitions()

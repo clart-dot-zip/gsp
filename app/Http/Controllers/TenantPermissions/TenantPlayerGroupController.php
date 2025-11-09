@@ -26,7 +26,7 @@ class TenantPlayerGroupController extends Controller
             ->where('id', $data['group_id'])
             ->firstOrFail();
 
-        $player->groups()->syncWithoutDetaching([$group->id]);
+        $player->groups()->sync([$group->id]);
 
         return Redirect::route('tenants.pages.show', ['page' => 'permissions_users'])
             ->with('status', 'Group assigned to player.');

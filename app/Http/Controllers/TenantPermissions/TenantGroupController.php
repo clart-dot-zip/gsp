@@ -8,9 +8,37 @@ use App\Models\TenantGroup;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\View\View;
 
 class TenantGroupController extends Controller
 {
+    public function edit(Request $request, Tenant $tenant, TenantGroup $group): View
+    {
+        $this->assertTenantContext($request, $tenant);
+        abort_unless($group->tenant_id === $tenant->id, 404);
+
+    $group->load(['parents:id,name', 'permissions:id,name', 'players:id,display_name,steam_id']);
+    $group->setRelation('permissions', $group->permissions->sortBy('name')->values());
+    $group->setRelation('players', $group->players->sortBy('display_name')->values());
+
+        $parentOptions = TenantGroup::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('id', '!=', $group->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $permissionDefinitions = $tenant->permissionDefinitions()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('tenants.permissions.groups.edit', [
+            'tenant' => $tenant,
+            'group' => $group,
+            'parentOptions' => $parentOptions,
+            'permissionDefinitions' => $permissionDefinitions,
+        ]);
+    }
+
     public function store(Request $request, Tenant $tenant): RedirectResponse
     {
         $this->assertTenantContext($request, $tenant);
@@ -35,7 +63,7 @@ class TenantGroupController extends Controller
         $parentIds = array_values(array_filter($parentIds, static fn (int $id): bool => $id !== $group->id));
         $group->parents()->sync($parentIds);
 
-        return Redirect::route('tenants.pages.show', ['page' => 'permissions_groups'])
+        return Redirect::route('tenants.permissions.groups.edit', ['tenant' => $tenant, 'group' => $group])
             ->with('status', 'Group created.');
     }
 
@@ -68,7 +96,7 @@ class TenantGroupController extends Controller
         $parentIds = array_values(array_filter($parentIds, static fn (int $id): bool => $id !== $group->id));
         $group->parents()->sync($parentIds);
 
-        return Redirect::route('tenants.pages.show', ['page' => 'permissions_groups'])
+        return Redirect::route('tenants.permissions.groups.edit', ['tenant' => $tenant, 'group' => $group])
             ->with('status', 'Group updated.');
     }
 
