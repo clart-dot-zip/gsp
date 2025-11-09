@@ -110,6 +110,14 @@ class Tenant extends Model
     }
 
     /**
+     * Alias used for nested route model binding on support ticket routes.
+     */
+    public function tickets(): HasMany
+    {
+        return $this->supportTickets();
+    }
+
+    /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function activityLogs()
