@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -18,12 +17,6 @@ class EnsureTenantPageAccess
             return $next($request);
         }
 
-        $user = $request->user();
-
-        if ($user && $user->can('view_tenant_pages')) {
-            return $next($request);
-        }
-
-        throw new AuthorizationException();
+    return (new EnsurePermission())->handle($request, $next, 'view_tenant_pages');
     }
 }
