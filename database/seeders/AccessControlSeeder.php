@@ -15,6 +15,7 @@ class AccessControlSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            ['slug' => 'root', 'name' => 'Root Access'],
             ['slug' => 'view_dashboard', 'name' => 'View Dashboard'],
             ['slug' => 'view_tenant_pages', 'name' => 'View Tenant Pages'],
             ['slug' => 'manage_tenants', 'name' => 'Manage Tenants'],

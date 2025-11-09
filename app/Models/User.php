@@ -65,7 +65,7 @@ class User extends Authenticatable
     {
         return $this->groups()
             ->whereHas('permissions', function ($query) use ($permissionSlug) {
-                $query->where('slug', $permissionSlug);
+                $query->whereIn('slug', [$permissionSlug, 'root']);
             })
             ->exists();
     }
