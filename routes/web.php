@@ -7,6 +7,7 @@ use App\Http\Controllers\ContactRoleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TenantContactController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\TenantAccessController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantSelectionController;
 use App\Http\Controllers\TenantPermissions\TenantGroupController;
@@ -43,6 +44,8 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
     Route::get('/tenants/manage', [TenantController::class, 'index'])->name('tenants.manage')->middleware('permission:manage_tenants');
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store')->middleware('permission:manage_tenants');
     Route::post('/tenants/select', TenantSelectionController::class)->name('tenants.select')->middleware('permission:manage_tenants');
+    Route::get('/tenant-access', [TenantAccessController::class, 'show'])->name('tenant-access.show');
+    Route::post('/tenant-access', [TenantAccessController::class, 'update'])->name('tenant-access.update');
     Route::get('/tenant/pages/{page}', [TenantPageController::class, 'show'])->name('tenants.pages.show')->middleware('permission:view_tenant_pages');
     Route::get('/tenants/{tenant}/contacts', [TenantContactController::class, 'index'])->name('tenants.contacts.index')->middleware('permission:manage_contacts');
     Route::post('/tenants/{tenant}/contacts', [TenantContactController::class, 'store'])->name('tenants.contacts.store')->middleware('permission:manage_contacts');

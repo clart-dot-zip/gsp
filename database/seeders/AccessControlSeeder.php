@@ -43,6 +43,11 @@ class AccessControlSeeder extends Seeder
             ['name' => 'Tenant Contacts']
         );
 
+        $tenantPlayerGroup = Group::firstOrCreate(
+            ['slug' => 'tenant-player'],
+            ['name' => 'Tenant Players']
+        );
+
         $allPermissionIds = Permission::pluck('id', 'slug');
 
         $adminGroup->permissions()->sync($allPermissionIds->values()->all());
@@ -54,6 +59,14 @@ class AccessControlSeeder extends Seeder
             ->all();
 
         $tenantContactGroup->permissions()->sync($tenantContactPermissions);
+
+        $tenantPlayerPermissions = $allPermissionIds
+            ->only(['view_tenant_pages'])
+            ->filter()
+            ->values()
+            ->all();
+
+        $tenantPlayerGroup->permissions()->sync($tenantPlayerPermissions);
 
         User::whereDoesntHave('groups')->each(function (User $user) use ($adminGroup) {
             $user->groups()->syncWithoutDetaching([$adminGroup->id]);

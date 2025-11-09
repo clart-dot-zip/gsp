@@ -3,7 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Tenant;
+use App\Support\TenantAccessManager;
 use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
@@ -59,20 +62,35 @@ class AppServiceProvider extends ServiceProvider
 
             $user = Auth::user();
 
-            if ($user && method_exists($user, 'isTenantContact') && $user->isTenantContact()) {
-                $contact = $user->tenantContact()->with('tenant')->first();
-                $tenant = $contact ? $contact->tenant : null;
+            /** @var Request $currentRequest */
+            $currentRequest = App::make(Request::class);
+            $tenantAccessOptions = TenantAccessManager::options($currentRequest);
 
-                if ($tenant) {
-                    if ((int) Session::get('tenant_id') !== $tenant->id) {
-                        Session::put('tenant_id', $tenant->id);
+            if ($tenantAccessOptions->isNotEmpty()) {
+                $tenantIds = $tenantAccessOptions
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->filter(fn ($id) => $id > 0)
+                    ->unique()
+                    ->values();
+
+                $tenants = Tenant::whereIn('id', $tenantIds)->orderBy('name')->get();
+                $selectedTenantId = (int) Session::get('tenant_id');
+
+                if (! $tenants->contains('id', $selectedTenantId)) {
+                    $firstTenant = $tenants->first();
+                    $selectedTenantId = $firstTenant ? $firstTenant->id : 0;
+                    if ($selectedTenantId > 0) {
+                        Session::put('tenant_id', $selectedTenantId);
                     }
-
-                    $view->with('availableTenants', Collection::make([$tenant]));
-                    $view->with('currentTenant', $tenant);
-
-                    return;
                 }
+
+                $currentTenant = $tenants->firstWhere('id', $selectedTenantId);
+
+                $view->with('availableTenants', $tenants);
+                $view->with('currentTenant', $currentTenant);
+
+                return;
             }
 
             $tenants = Tenant::orderBy('name')->get();

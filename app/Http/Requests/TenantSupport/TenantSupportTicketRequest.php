@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\TenantContact;
 use App\Models\TenantSupportTicket;
 use App\Models\User;
+use App\Support\TenantAccessManager;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Collection;
 
@@ -27,11 +28,16 @@ abstract class TenantSupportTicketRequest extends FormRequest
             return true;
         }
 
-        if (! $user->isTenantContact() || ! $user->tenantContact) {
-            return false;
+        $allowedTenantIds = TenantAccessManager::allowedTenantIds($this);
+        if ($allowedTenantIds->isNotEmpty()) {
+            return $allowedTenantIds->contains((int) $tenant->id);
         }
 
-        return (int) $user->tenantContact->tenant_id === (int) $tenant->id;
+        if ($user->isTenantContact() && $user->tenantContact) {
+            return (int) $user->tenantContact->tenant_id === (int) $tenant->id;
+        }
+
+        return false;
     }
 
     /**
@@ -118,6 +124,16 @@ abstract class TenantSupportTicketRequest extends FormRequest
     public function actingTenantContact(): ?TenantContact
     {
         $user = $this->user();
+
+        $activeContactId = (int) $this->session()->get('active_contact_id');
+
+        if ($activeContactId > 0) {
+            if ($user instanceof User && $user->tenantContact && (int) $user->tenantContact->id === $activeContactId) {
+                return $user->tenantContact;
+            }
+
+            return TenantContact::find($activeContactId);
+        }
 
         if ($user instanceof User && $user->tenantContact) {
             return $user->tenantContact;

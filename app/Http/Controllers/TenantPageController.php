@@ -7,6 +7,7 @@ use App\Models\TenantActivityLog;
 use App\Models\TenantSupportTicket;
 use App\Models\TenantSupportTicketAssignee;
 use App\Models\TenantContact;
+use App\Support\TenantAccessManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,6 +38,11 @@ class TenantPageController extends Controller
                 ->with('status', 'The selected tenant could not be found.');
         }
 
+        $allowedTenantIds = TenantAccessManager::allowedTenantIds($request);
+        if ($allowedTenantIds->isNotEmpty() && ! $allowedTenantIds->contains($tenant->id)) {
+            abort(403);
+        }
+
         $categories = config('tenant.categories', []);
         $pages = [];
 
@@ -61,8 +67,8 @@ class TenantPageController extends Controller
         $permissionDefinitions = collect();
         $tenantPlayers = collect();
         $permissionsOverview = null;
-    $supportTickets = null;
-    $selectedTicket = null;
+        $supportTickets = null;
+        $selectedTicket = null;
         $supportTicketFilters = [];
         $supportTicketHighlightId = $request->query('highlight_ticket');
         $supportAgents = collect();
@@ -340,7 +346,7 @@ class TenantPageController extends Controller
             return $assignee->name;
         }
 
-    if ($assignee instanceof TenantContact) {
+        if ($assignee instanceof TenantContact) {
             return $assignee->name;
         }
 

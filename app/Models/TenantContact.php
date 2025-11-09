@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $notes
  * @property string|null $steam_id
  * @property-read \App\Models\User|null $user
+ * @property-read \App\Models\Tenant|null $tenant
+ * @property-read \App\Models\ContactRole|null $role
  *
  * @method static \Illuminate\Database\Eloquent\Builder|TenantContact query()
  * @method static \Illuminate\Database\Eloquent\Builder|TenantContact firstWhere(string $column, $operator = null, $value = null, $boolean = 'and')

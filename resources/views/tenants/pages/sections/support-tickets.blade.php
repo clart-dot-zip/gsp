@@ -191,7 +191,12 @@
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div>
                                     <h3 class="card-title mb-0">{{ $selectedTicket->subject }}</h3>
-                                    <p class="mb-0 text-sm text-muted">Reference: {{ $selectedTicket->external_reference ?? 'Not synced yet' }}</p>
+                                    <p class="mb-0 text-sm text-muted">
+                                        Reference:
+                                        <span class="ml-1 font-weight-semibold text-nowrap text-white">
+                                            {{ $selectedTicket->external_reference ?? 'Not synced yet' }}
+                                        </span>
+                                    </p>
                                 </div>
                                 <div class="text-right">
                                     <span class="badge badge-info">{{ $statusOptions[$selectedTicket->status] ?? ucfirst($selectedTicket->status) }}</span>

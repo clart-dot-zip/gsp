@@ -25,9 +25,9 @@ class SteamOpenIdService
     /**
      * Build the Steam OpenID login URL.
      */
-    public function getRedirectUrl(Request $request): string
+    public function getRedirectUrl(Request $request, array $returnQuery = []): string
     {
-        $returnTo = $this->buildReturnUrl($request);
+        $returnTo = $this->buildReturnUrl($request, $returnQuery);
         $realm = $this->determineRealm($request, $returnTo);
 
         $params = [
@@ -47,9 +47,13 @@ class SteamOpenIdService
         return self::OPENID_ENDPOINT.'?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     }
 
-    private function buildReturnUrl(Request $request): string
+    private function buildReturnUrl(Request $request, array $returnQuery = []): string
     {
         $path = $this->url->route('login.steam.callback', [], false);
+
+        if (! empty($returnQuery)) {
+            $path .= '?'.http_build_query($returnQuery, '', '&', PHP_QUERY_RFC3986);
+        }
         $scheme = $this->resolveScheme($request);
         $host = $this->resolveHost($request);
         $port = $this->resolvePort($request, $scheme);
@@ -67,6 +71,7 @@ class SteamOpenIdService
             'host' => $host,
             'port' => $port,
             'return_url' => $returnUrl,
+            'return_query' => $returnQuery,
         ]);
 
         return $returnUrl;

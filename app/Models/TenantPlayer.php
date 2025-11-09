@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string|null $steam_id
  * @property string|null $avatar_url
  * @property \Illuminate\Support\Carbon|null $last_synced_at
+ * @property-read \App\Models\Tenant|null $tenant
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TenantGroup> $groups
  *
  * @method static \Illuminate\Database\Eloquent\Builder|TenantPlayer query()
  *
