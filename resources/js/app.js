@@ -1,11 +1,7 @@
 import './bootstrap';
 
-/* Import AdminLTE JavaScript */
-import 'admin-lte/dist/js/adminlte.min.js';
+import Alpine from 'alpinejs';
 
-/* Import jQuery (required by AdminLTE) */
-import $ from 'jquery';
-window.jQuery = window.$ = $;
+window.Alpine = Alpine;
 
-/* Import Bootstrap */
-import 'bootstrap';
+Alpine.start();
