@@ -30,7 +30,14 @@ class TenantPageController extends Controller
                 ->with('status', 'The selected tenant could not be found.');
         }
 
-        $pages = config('tenant.pages', []);
+        $categories = config('tenant.categories', []);
+        $pages = [];
+
+        foreach ($categories as $category) {
+            foreach ($category['pages'] ?? [] as $pageKey => $pageTitle) {
+                $pages[$pageKey] = $pageTitle;
+            }
+        }
 
         abort_unless(array_key_exists($page, $pages), 404);
 

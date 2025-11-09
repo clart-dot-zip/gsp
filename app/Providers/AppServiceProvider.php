@@ -38,7 +38,17 @@ class AppServiceProvider extends ServiceProvider
             'dashboard',
             'tenants.*',
         ], function ($view) {
-            $view->with('tenantPages', Config::get('tenant.pages'));
+            $tenantCategories = Config::get('tenant.categories', []);
+            $tenantPages = [];
+
+            foreach ($tenantCategories as $category) {
+                foreach ($category['pages'] ?? [] as $pageKey => $pageTitle) {
+                    $tenantPages[$pageKey] = $pageTitle;
+                }
+            }
+
+            $view->with('tenantPages', $tenantPages);
+            $view->with('tenantPageCategories', $tenantCategories);
 
             if (! Schema::hasTable('tenants') || ! Auth::check()) {
                 $view->with('availableTenants', Collection::make());

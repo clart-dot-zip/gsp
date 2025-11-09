@@ -32,7 +32,7 @@
                         <p>Dashboard</p>
                     </a>
                 </li>
-                @if($canViewTenantPages && isset($tenantPages) && count($tenantPages) > 0)
+                @if($canViewTenantPages && isset($tenantPageCategories) && count($tenantPageCategories) > 0)
                     <li class="nav-item has-treeview {{ request()->routeIs('tenants.pages.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('tenants.pages.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-layer-group"></i>
@@ -42,16 +42,35 @@
                             </p>
                         </a>
                         <ul class="nav nav-treeview">
-                            @foreach($tenantPages as $pageKey => $pageTitle)
-                                <li class="nav-item">
-                                    <a
-                                        href="{{ empty($currentTenant) ? '#' : route('tenants.pages.show', $pageKey) }}"
-                                        class="nav-link {{ request()->routeIs('tenants.pages.show') && request()->route('page') === $pageKey ? 'active' : '' }} {{ empty($currentTenant) ? 'disabled text-muted' : '' }}"
-                                        @if(empty($currentTenant)) aria-disabled="true" tabindex="-1" onclick="return false;" @endif
-                                    >
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>{{ $pageTitle }}</p>
+                            @foreach($tenantPageCategories as $categoryKey => $category)
+                                @php
+                                    $categoryPages = $category['pages'] ?? [];
+                                    $categoryIsActive = request()->routeIs('tenants.pages.show')
+                                        && array_key_exists(request()->route('page'), $categoryPages);
+                                    $categoryTitle = $category['title'] ?? ucwords(str_replace('_', ' ', (string) $categoryKey));
+                                @endphp
+                                <li class="nav-item has-treeview {{ $categoryIsActive ? 'menu-open' : '' }}">
+                                    <a href="#" class="nav-link {{ $categoryIsActive ? 'active' : '' }}">
+                                        <i class="nav-icon fas fa-folder"></i>
+                                        <p>
+                                            {{ $categoryTitle }}
+                                            <i class="right fas fa-angle-left"></i>
+                                        </p>
                                     </a>
+                                    <ul class="nav nav-treeview">
+                                        @foreach($categoryPages as $pageKey => $pageTitle)
+                                            <li class="nav-item">
+                                                <a
+                                                    href="{{ empty($currentTenant) ? '#' : route('tenants.pages.show', $pageKey) }}"
+                                                    class="nav-link {{ request()->routeIs('tenants.pages.show') && request()->route('page') === $pageKey ? 'active' : '' }} {{ empty($currentTenant) ? 'disabled text-muted' : '' }}"
+                                                    @if(empty($currentTenant)) aria-disabled="true" tabindex="-1" onclick="return false;" @endif
+                                                >
+                                                    <i class="far fa-circle nav-icon"></i>
+                                                    <p>{{ $pageTitle }}</p>
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
                                 </li>
                             @endforeach
                         </ul>

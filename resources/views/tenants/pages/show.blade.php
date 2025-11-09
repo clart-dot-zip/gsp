@@ -15,15 +15,32 @@
     </div>
 
     @switch($pageKey)
-        @case('overview')
-            @include('tenants.pages.sections.overview', ['tenant' => $tenant])
-            @break
-
         @case('contacts')
             @include('tenants.pages.sections.contacts', [
                 'tenant' => $tenant,
                 'contacts' => $contacts ?? collect(),
             ])
             @break
+
+        @case('players')
+        @case('bans')
+        @case('blacklists')
+        @case('warnings')
+        @case('logs')
+            @include('tenants.pages.sections.placeholder', [
+                'tenant' => $tenant,
+                'pageTitle' => $pageTitle,
+            ])
+            @break
+
+        @case('overview')
+            @include('tenants.pages.sections.overview', ['tenant' => $tenant])
+            @break
+
+        @default
+            @include('tenants.pages.sections.placeholder', [
+                'tenant' => $tenant,
+                'pageTitle' => $pageTitle,
+            ])
     @endswitch
 </x-app-layout>
