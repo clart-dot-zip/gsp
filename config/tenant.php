@@ -4,12 +4,14 @@ return [
     'categories' => [
         'overview' => [
             'title' => 'Overview',
+            'icon' => 'fas fa-layer-group',
             'pages' => [
                 'overview' => 'Tenant Overview',
             ],
         ],
         'manage_services' => [
             'title' => 'Manage Services',
+            'icon' => 'fas fa-server',
             'pages' => [
                 'players' => 'Players',
                 'bans' => 'Bans',
@@ -18,8 +20,9 @@ return [
                 'logs' => 'Logs',
             ],
         ],
-        'admin' => [
-            'title' => 'Admin',
+        'tenant_admin' => [
+            'title' => 'Tenant Admin',
+            'icon' => 'fas fa-id-card',
             'pages' => [
                 'contacts' => 'Key Contacts',
             ],
