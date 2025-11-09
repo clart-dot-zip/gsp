@@ -13,10 +13,10 @@ class SteamOpenIdService
     /**
      * Build the Steam OpenID login URL.
      */
-    public function getRedirectUrl(): string
+    public function getRedirectUrl(Request $request): string
     {
         $returnTo = route('login.steam.callback');
-        $realm = config('app.url') ?: url('/');
+        $realm = $this->determineRealm($request, $returnTo);
 
         $params = [
             'openid.ns' => 'http://specs.openid.net/auth/2.0',
@@ -28,6 +28,29 @@ class SteamOpenIdService
         ];
 
         return self::OPENID_ENDPOINT.'?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    private function determineRealm(Request $request, string $returnTo): string
+    {
+        $host = $request->getSchemeAndHttpHost();
+
+        if ($host) {
+            return $host;
+        }
+
+        $parsed = parse_url($returnTo);
+
+        if (! $parsed || ! isset($parsed['scheme'], $parsed['host'])) {
+            return url('/');
+        }
+
+        $realm = $parsed['scheme'].'://'.$parsed['host'];
+
+        if (isset($parsed['port'])) {
+            $realm .= ':'.$parsed['port'];
+        }
+
+        return $realm;
     }
 
     /**
@@ -59,7 +82,7 @@ class SteamOpenIdService
             return null;
         }
 
-        $claimedId = $request->input('openid.claimed_id');
+    $claimedId = $request->input('openid.claimed_id') ?: $request->input('openid.identity');
 
         if (! $claimedId) {
             return null;

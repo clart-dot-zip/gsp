@@ -54,9 +54,9 @@ class AuthController extends Controller
         }
     }
 
-    public function redirectToSteam()
+    public function redirectToSteam(Request $request)
     {
-        return Redirect::away($this->steamOpenId->getRedirectUrl());
+        return Redirect::away($this->steamOpenId->getRedirectUrl($request));
     }
 
     public function handleSteamCallback(Request $request)
