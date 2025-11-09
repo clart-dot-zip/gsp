@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\View\View;
 
@@ -71,10 +72,13 @@ class AuthController extends Controller
     public function handleSteamCallback(Request $request)
     {
         try {
+            $queryKeys = array_keys($request->query());
+            $hasOpenIdParams = ! empty(array_filter($queryKeys, static fn ($key) => Str::startsWith($key, 'openid')));
+
             Log::debug('Handling Steam OpenID callback.', [
                 'ip' => $request->ip(),
-                'has_openid_params' => (bool) $request->query('openid.claimed_id'),
-                'query_keys' => array_keys($request->query()),
+                'has_openid_params' => $hasOpenIdParams,
+                'query_keys' => $queryKeys,
             ]);
 
             $steamId = $this->steamOpenId->validate($request);

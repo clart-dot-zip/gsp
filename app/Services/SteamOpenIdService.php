@@ -109,16 +109,11 @@ class SteamOpenIdService
      */
     public function validate(Request $request): ?string
     {
-        $params = [];
+        $params = $this->extractOpenIdParameters($request);
 
-        foreach ($request->all() as $key => $value) {
-            if (Str::startsWith($key, 'openid.')) {
-                $params[$key] = $value;
-            }
-        }
-
-        Log::debug('Steam OpenID callback parameters filtered.', [
-            'keys' => array_keys($params),
+        Log::debug('Steam OpenID callback parameters normalised.', [
+            'normalized_keys' => array_keys($params),
+            'original_keys' => array_keys($request->all()),
         ]);
 
         if ($params === []) {
@@ -192,6 +187,22 @@ class SteamOpenIdService
         ]);
 
         return $steamId;
+    }
+
+    private function extractOpenIdParameters(Request $request): array
+    {
+        $params = [];
+
+        foreach ($request->all() as $key => $value) {
+            if (! Str::startsWith($key, 'openid')) {
+                continue;
+            }
+
+            $normalizedKey = str_replace('_', '.', $key);
+            $params[$normalizedKey] = $value;
+        }
+
+        return $params;
     }
 
     private function resolveScheme(Request $request): string
