@@ -93,16 +93,21 @@ class TenantPageController extends Controller
             'can_collaborate' => false,
             'is_player' => $isPlayerSession,
             'can_comment' => false,
+            'can_create' => false,
         ];
 
         if ($user) {
             $supportTicketPermissions['can_collaborate'] = $supportTicketPermissions['can_manage']
                 || ($user->isTenantContact() && $user->tenantContact && (int) $user->tenantContact->tenant_id === (int) $tenant->id);
+            if ($supportTicketPermissions['can_collaborate']) {
+                $supportTicketPermissions['can_create'] = true;
+            }
         }
 
         if ($isPlayerSession) {
             $supportTicketPermissions['can_collaborate'] = false;
             $supportTicketPermissions['can_comment'] = true;
+            $supportTicketPermissions['can_create'] = true;
         }
 
         if ($page === 'activity_logs') {

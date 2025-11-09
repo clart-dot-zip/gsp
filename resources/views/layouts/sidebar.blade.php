@@ -54,14 +54,15 @@
                                 $pageKey = array_key_first($categoryPages);
                                 $pageTitle = $categoryPages[$pageKey];
                             @endphp
+                            <li class="nav-header text-uppercase text-xs text-muted">{{ $categoryTitle }}</li>
                             <li class="nav-item">
                                 <a
                                     href="{{ empty($currentTenant) ? '#' : route('tenants.pages.show', $pageKey) }}"
-                                    class="nav-link {{ $categoryIsActive ? 'active' : '' }} {{ empty($currentTenant) ? 'disabled text-muted' : '' }}"
+                                    class="nav-link {{ request()->routeIs('tenants.pages.show') && request()->route('page') === $pageKey ? 'active' : '' }} {{ empty($currentTenant) ? 'disabled text-muted' : '' }}"
                                     @if(empty($currentTenant)) aria-disabled="true" tabindex="-1" onclick="return false;" @endif
                                 >
                                     <i class="nav-icon {{ $categoryIcon }}"></i>
-                                    <p>{{ $categoryTitle }}</p>
+                                    <p>{{ $pageTitle }}</p>
                                 </a>
                             </li>
                         @else

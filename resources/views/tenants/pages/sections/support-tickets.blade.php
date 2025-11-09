@@ -61,7 +61,7 @@
             </form>
         </div>
 
-        @if ($supportTicketPermissions['can_collaborate'])
+        @if ($supportTicketPermissions['can_create'])
             <div class="card card-outline card-success">
                 <div class="card-header">
                     <h3 class="card-title mb-0">New Ticket</h3>
@@ -116,16 +116,18 @@
                             <label for="ticket-note">Ticket Notes <span class="text-muted">(optional)</span></label>
                             <textarea id="ticket-note" name="note_body" rows="3" class="form-control" placeholder="Add extra context for staff members."></textarea>
                         </div>
-                        <div class="form-group">
-                            <label for="ticket-timer">Timer (minutes) <span class="text-muted">(optional)</span></label>
-                            <input type="number" id="ticket-timer" name="note_timer_seconds" min="0" step="1" class="form-control" placeholder="e.g. 15 for a quarter-hour">
-                        </div>
-                        <div class="form-group">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="ticket-resolution" name="note_is_resolution" value="1">
-                                <label class="custom-control-label" for="ticket-resolution">Mark note as resolution</label>
+                        @unless ($playerSessionActive)
+                            <div class="form-group">
+                                <label for="ticket-timer">Timer (minutes) <span class="text-muted">(optional)</span></label>
+                                <input type="number" id="ticket-timer" name="note_timer_seconds" min="0" step="1" class="form-control" placeholder="e.g. 15 for a quarter-hour">
                             </div>
-                        </div>
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="ticket-resolution" name="note_is_resolution" value="1">
+                                    <label class="custom-control-label" for="ticket-resolution">Mark note as resolution</label>
+                                </div>
+                            </div>
+                        @endunless
                         <div class="form-group">
                             <label for="ticket-attachments">Attachments <span class="text-muted">(images only)</span></label>
                             <input type="file" id="ticket-attachments" name="attachments[]" class="form-control-file" accept="image/*" multiple>
