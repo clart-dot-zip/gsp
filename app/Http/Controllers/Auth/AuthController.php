@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\SteamOpenIdService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Laravel\Socialite\Facades\Socialite;
@@ -56,27 +57,60 @@ class AuthController extends Controller
 
     public function redirectToSteam(Request $request)
     {
-        return Redirect::away($this->steamOpenId->getRedirectUrl($request));
+        $redirectUrl = $this->steamOpenId->getRedirectUrl($request);
+
+        Log::debug('Redirecting user to Steam OpenID provider.', [
+            'user_agent' => $request->userAgent(),
+            'ip' => $request->ip(),
+            'redirect_url' => $redirectUrl,
+        ]);
+
+        return Redirect::away($redirectUrl);
     }
 
     public function handleSteamCallback(Request $request)
     {
         try {
+            Log::debug('Handling Steam OpenID callback.', [
+                'ip' => $request->ip(),
+                'has_openid_params' => (bool) $request->query('openid.claimed_id'),
+                'query_keys' => array_keys($request->query()),
+            ]);
+
             $steamId = $this->steamOpenId->validate($request);
 
             if (! $steamId) {
+                Log::warning('Steam OpenID validation returned no Steam ID.', [
+                    'ip' => $request->ip(),
+                    'query' => $request->query(),
+                ]);
+
                 return Redirect::route('login')->withErrors([
                     'error' => 'Steam authentication could not be validated.',
                 ]);
             }
 
+            Log::debug('Steam OpenID validation succeeded.', [
+                'steam_id' => $steamId,
+            ]);
+
             $contact = TenantContact::where('steam_id', $steamId)->with('tenant')->first();
 
             if (! $contact) {
+                Log::warning('Steam OpenID matched Steam ID with no tenant contact.', [
+                    'steam_id' => $steamId,
+                ]);
+
                 return Redirect::route('login')->withErrors([
                     'error' => 'No tenant contact is linked to this Steam account.',
                 ]);
             }
+
+            Log::debug('Steam tenant contact located.', [
+                'steam_id' => $steamId,
+                'contact_id' => $contact->id,
+                'tenant_id' => $contact->tenant_id,
+            ]);
 
             $user = User::updateOrCreate([
                 'steam_id' => $steamId,
@@ -85,22 +119,46 @@ class AuthController extends Controller
                 'email' => $contact->email ?: 'steam-'.$steamId.'@auth.local',
             ]);
 
+            Log::debug('Steam user record synchronised.', [
+                'user_id' => $user->id,
+                'steam_id' => $steamId,
+            ]);
+
             $user->tenant_contact_id = $contact->id;
             $user->save();
 
             $group = Group::firstWhere('slug', 'tenant-contact');
             if ($group && ! $user->groups()->whereKey($group->id)->exists()) {
                 $user->groups()->attach($group->id);
+                Log::debug('Tenant-contact group attached to Steam user.', [
+                    'user_id' => $user->id,
+                    'group_id' => $group->id,
+                ]);
             }
 
             Auth::login($user, true);
 
             if ($contact->tenant_id) {
                 Session::put('tenant_id', $contact->tenant_id);
+                Log::debug('Tenant context stored in session after Steam login.', [
+                    'user_id' => $user->id,
+                    'tenant_id' => $contact->tenant_id,
+                ]);
             }
+
+            Log::info('Steam login completed successfully.', [
+                'user_id' => $user->id,
+                'steam_id' => $steamId,
+            ]);
 
             return Redirect::route('tenants.pages.show', ['page' => 'overview']);
         } catch (\Exception $e) {
+            Log::error('Steam authentication callback threw an exception.', [
+                'message' => $e->getMessage(),
+                'trace_id' => $request->header('X-Request-ID'),
+                'ip' => $request->ip(),
+            ]);
+
             return Redirect::route('login')->withErrors([
                 'error' => 'Steam authentication failed.',
             ]);

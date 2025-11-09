@@ -2,6 +2,12 @@
 
 namespace App\Services;
 
+use Illuminate\Contracts\Routing\UrlGenerator;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 use function config;
 
@@ -9,9 +15,9 @@ class SteamOpenIdService
 {
     private const OPENID_ENDPOINT = 'https://steamcommunity.com/openid/login';
 
-    protected \Illuminate\Contracts\Routing\UrlGenerator $url;
+    protected UrlGenerator $url;
 
-    public function __construct(\Illuminate\Contracts\Routing\UrlGenerator $url)
+    public function __construct(UrlGenerator $url)
     {
         $this->url = $url;
     }
@@ -19,7 +25,7 @@ class SteamOpenIdService
     /**
      * Build the Steam OpenID login URL.
      */
-    public function getRedirectUrl(\Illuminate\Http\Request $request): string
+    public function getRedirectUrl(Request $request): string
     {
         $returnTo = $this->buildReturnUrl($request);
         $realm = $this->determineRealm($request, $returnTo);
@@ -33,10 +39,15 @@ class SteamOpenIdService
             'openid.claimed_id' => 'http://specs.openid.net/auth/2.0/identifier_select',
         ];
 
+        Log::debug('Steam OpenID redirect URL composed.', [
+            'return_to' => $returnTo,
+            'realm' => $realm,
+        ]);
+
         return self::OPENID_ENDPOINT.'?'.http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     }
 
-    private function buildReturnUrl(\Illuminate\Http\Request $request): string
+    private function buildReturnUrl(Request $request): string
     {
         $path = $this->url->route('login.steam.callback', [], false);
         $scheme = $this->resolveScheme($request);
@@ -49,15 +60,29 @@ class SteamOpenIdService
             $authority .= ':'.$port;
         }
 
-        return $scheme.'://'.$authority.$path;
+        $returnUrl = $scheme.'://'.$authority.$path;
+
+        Log::debug('Steam OpenID return URL constructed.', [
+            'scheme' => $scheme,
+            'host' => $host,
+            'port' => $port,
+            'return_url' => $returnUrl,
+        ]);
+
+        return $returnUrl;
     }
 
-    private function determineRealm(\Illuminate\Http\Request $request, string $returnTo): string
+    private function determineRealm(Request $request, string $returnTo): string
     {
         $parsed = parse_url($returnTo);
 
         if (! $parsed || ! isset($parsed['scheme'], $parsed['host'])) {
-            return rtrim($this->url->to('/'), '/');
+            $fallback = rtrim($this->url->to('/'), '/');
+            Log::debug('Steam OpenID realm fell back to base URL.', [
+                'fallback' => $fallback,
+            ]);
+
+            return $fallback;
         }
 
         $scheme = $parsed['scheme'];
@@ -67,107 +92,182 @@ class SteamOpenIdService
             $realm .= ':'.$parsed['port'];
         }
 
+        Log::debug('Steam OpenID realm determined.', [
+            'realm' => $realm,
+            'parsed' => [
+                'scheme' => $parsed['scheme'] ?? null,
+                'host' => $parsed['host'] ?? null,
+                'port' => $parsed['port'] ?? null,
+            ],
+        ]);
+
         return $realm;
     }
 
     /**
      * Validate the Steam OpenID response and return the 64-bit Steam ID.
      */
-    public function validate(\Illuminate\Http\Request $request): ?string
+    public function validate(Request $request): ?string
     {
         $params = [];
 
         foreach ($request->all() as $key => $value) {
-            if (\Illuminate\Support\Str::startsWith($key, 'openid.')) {
+            if (Str::startsWith($key, 'openid.')) {
                 $params[$key] = $value;
             }
         }
 
+        Log::debug('Steam OpenID callback parameters filtered.', [
+            'keys' => array_keys($params),
+        ]);
+
         if ($params === []) {
+            Log::warning('Steam OpenID callback contained no OpenID parameters.', [
+                'query' => $request->query(),
+            ]);
+
             return null;
         }
 
         $params['openid.mode'] = 'check_authentication';
 
         try {
-            $response = \Illuminate\Support\Facades\Http::asForm()
+            $response = Http::asForm()
                 ->retry(2, 200)
                 ->withHeaders([
                     'User-Agent' => config('app.name', 'Laravel').' SteamOpenID/1.0',
                     'Accept' => 'text/plain',
                 ])->post(self::OPENID_ENDPOINT, $params);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Illuminate\Support\Facades\Log::warning('Steam OpenID validation failed to connect.', ['exception' => $e]);
+
+            Log::debug('Steam OpenID validation request dispatched.', [
+                'status' => $response->status(),
+            ]);
+        } catch (ConnectionException $e) {
+            Log::warning('Steam OpenID validation failed to connect.', ['exception' => $e->getMessage()]);
 
             return null;
         } catch (Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Steam OpenID validation encountered an unexpected error.', ['exception' => $e]);
+            Log::warning('Steam OpenID validation encountered an unexpected error.', ['exception' => $e->getMessage()]);
 
             return null;
         }
 
         if (! $response->successful()) {
+            Log::warning('Steam OpenID response was not successful.', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
             return null;
         }
 
-        if (! \Illuminate\Support\Str::contains($response->body(), 'is_valid:true')) {
+        if (! Str::contains($response->body(), 'is_valid:true')) {
+            Log::debug('Steam OpenID response missing is_valid:true flag.', [
+                'body' => $response->body(),
+            ]);
+
             return null;
         }
 
         $claimedId = $request->input('openid.claimed_id') ?: $request->input('openid.identity');
 
         if (! $claimedId) {
+            Log::debug('Steam OpenID payload missing claimed ID.', []);
+
             return null;
         }
 
         if (! preg_match('/\d+$/', $claimedId, $matches)) {
+            Log::debug('Steam OpenID claimed ID did not end with digits.', [
+                'claimed_id' => $claimedId,
+            ]);
+
             return null;
         }
 
-        return $matches[0] ?? null;
+        $steamId = $matches[0];
+
+        Log::debug('Steam OpenID validation extracted Steam ID.', [
+            'steam_id' => $steamId,
+        ]);
+
+        return $steamId;
     }
 
-    private function resolveScheme(\Illuminate\Http\Request $request): string
+    private function resolveScheme(Request $request): string
     {
         if ($forwardedProto = $request->headers->get('X-Forwarded-Proto')) {
-            return strtolower(trim(explode(',', $forwardedProto)[0]));
+            $scheme = strtolower(trim(explode(',', $forwardedProto)[0]));
+        } else {
+            $scheme = $request->getScheme() ?: 'https';
         }
 
-        return $request->getScheme() ?: 'https';
+        Log::debug('Steam OpenID scheme resolved.', [
+            'scheme' => $scheme,
+            'forwarded_proto' => $request->headers->get('X-Forwarded-Proto'),
+        ]);
+
+        return $scheme;
     }
 
-    private function resolveHost(\Illuminate\Http\Request $request): string
+    private function resolveHost(Request $request): string
     {
-        if ($forwardedHost = $request->headers->get('X-Forwarded-Host')) {
-            return trim(explode(',', $forwardedHost)[0]);
+        $forwardedHost = $request->headers->get('X-Forwarded-Host');
+        $host = null;
+        $source = 'fallback';
+
+        if ($forwardedHost) {
+            $host = trim(explode(',', $forwardedHost)[0]);
+            $source = 'forwarded-host';
+        } else {
+            $host = $request->getHost();
+            if ($host) {
+                $source = 'request';
+            } else {
+                $host = parse_url($this->url->to('/'), PHP_URL_HOST) ?? 'localhost';
+            }
         }
 
-        $host = $request->getHost();
+        Log::debug('Steam OpenID host resolved.', [
+            'host' => $host,
+            'source' => $source,
+            'forwarded_host' => $forwardedHost,
+        ]);
 
-        if ($host) {
-            return $host;
-        }
-
-        return parse_url($this->url->to('/'), PHP_URL_HOST) ?? 'localhost';
+        return $host;
     }
 
-    private function resolvePort(\Illuminate\Http\Request $request, string $scheme): ?int
+    private function resolvePort(Request $request, string $scheme): ?int
     {
         if ($forwardedPort = $request->headers->get('X-Forwarded-Port')) {
             $port = (int) trim(explode(',', $forwardedPort)[0]);
+            $normalized = $this->isStandardPort($scheme, $port) ? null : $port;
 
-            return $this->isStandardPort($scheme, $port) ? null : $port;
+            Log::debug('Steam OpenID port resolved from forwarded header.', [
+                'raw_port' => $port,
+                'normalized_port' => $normalized,
+            ]);
+
+            return $normalized;
         }
 
         $port = $request->getPort();
 
         if ($port && ! $this->isStandardPort($scheme, $port)) {
+            Log::debug('Steam OpenID port resolved from request.', [
+                'port' => $port,
+            ]);
+
             return $port;
         }
 
         $configured = parse_url($this->url->to('/'), PHP_URL_PORT);
 
         if ($configured && ! $this->isStandardPort($scheme, (int) $configured)) {
+            Log::debug('Steam OpenID port resolved from app URL.', [
+                'configured_port' => (int) $configured,
+            ]);
+
             return (int) $configured;
         }
 
