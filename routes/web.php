@@ -12,9 +12,8 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {
-        return Socialite::driver('authentik')->redirect();
-    })->name('login');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::get('/login/authentik', [AuthController::class, 'redirect'])->name('login.authentik');
     Route::get('/auth/callback', [AuthController::class, 'callback']);
     Route::get('/login/steam', [AuthController::class, 'redirectToSteam'])->name('login.steam');
     Route::get('/auth/steam/callback', [AuthController::class, 'handleSteamCallback'])->name('login.steam.callback');

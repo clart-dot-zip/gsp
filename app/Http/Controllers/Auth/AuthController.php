@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\View\View;
 
 class AuthController extends Controller
 {
@@ -20,6 +21,11 @@ class AuthController extends Controller
     public function __construct(SteamOpenIdService $steamOpenId)
     {
         $this->steamOpenId = $steamOpenId;
+    }
+
+    public function showLogin(): View
+    {
+        return view('auth.login');
     }
 
     public function redirect()
