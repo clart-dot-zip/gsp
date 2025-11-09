@@ -10,11 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        Schema::dropIfExists('tenant_support_ticket_attachments');
+
         Schema::create('tenant_support_ticket_attachments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('tenant_support_ticket_note_id')
-                ->constrained('tenant_support_ticket_notes')
+            $table->foreignId('tenant_support_ticket_note_id');
+            $table->foreign('tenant_support_ticket_note_id', 'support_ticket_attach_note_fk')
+                ->references('id')
+                ->on('tenant_support_ticket_notes')
                 ->cascadeOnDelete();
             $table->string('disk')->default('public');
             $table->string('path');
