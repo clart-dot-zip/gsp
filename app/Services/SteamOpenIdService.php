@@ -164,10 +164,16 @@ class SteamOpenIdService
             return null;
         }
 
-        $claimedId = $request->input('openid.claimed_id') ?: $request->input('openid.identity');
+        $claimedId = $request->input('openid_claimed_id') ?: $request->input('openid_identity');
 
         if (! $claimedId) {
-            Log::debug('Steam OpenID payload missing claimed ID.', []);
+            $claimedId = $params['openid.claimed_id'] ?? $params['openid.identity'] ?? null;
+        }
+
+        if (! $claimedId) {
+            Log::debug('Steam OpenID payload missing claimed ID.', [
+                'available_keys' => array_keys($params),
+            ]);
 
             return null;
         }
@@ -198,7 +204,7 @@ class SteamOpenIdService
                 continue;
             }
 
-            $normalizedKey = str_replace('_', '.', $key);
+            $normalizedKey = Str::replaceFirst('openid_', 'openid.', $key);
             $params[$normalizedKey] = $value;
         }
 
