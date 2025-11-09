@@ -83,6 +83,16 @@ class Tenant extends Model
     }
 
     /**
+     * Alias for permissionDefinitions to support route-model binding.
+     *
+     * @return HasMany<TenantPermission>
+     */
+    public function permissions(): HasMany
+    {
+        return $this->permissionDefinitions();
+    }
+
+    /**
      * @return HasMany<TenantPlayer>
      */
     public function players(): HasMany
