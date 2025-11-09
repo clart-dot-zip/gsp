@@ -1,3 +1,7 @@
+@php
+    $contactCount = $tenant->contacts?->count() ?? 0;
+@endphp
+
 <div class="row">
     <div class="col-lg-4 col-md-6">
         <div class="small-box bg-primary">
@@ -63,6 +67,9 @@
                         <span class="badge badge-success">Operational</span>
                         <small class="text-muted ml-2">No incidents reported</small>
                     </dd>
+
+                    <dt class="col-sm-4">Contacts on file</dt>
+                    <dd class="col-sm-8">{{ $contactCount }}</dd>
                 </dl>
             </div>
         </div>

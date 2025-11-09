@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\TenantContact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -33,6 +34,14 @@ class Tenant extends Model
     public function displayName(): string
     {
         return $this->name;
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function contacts()
+    {
+        return $this->hasMany(TenantContact::class)->orderBy('name');
     }
 
     /**

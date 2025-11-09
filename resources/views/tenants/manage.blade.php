@@ -64,7 +64,8 @@
                             <thead>
                                 <tr>
                                     <th scope="col">Name</th>
-                                    <th scope="col" class="d-none d-md-table-cell">Contact</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Primary Email</th>
+                                    <th scope="col" class="text-center">Contacts</th>
                                     <th scope="col" class="d-none d-md-table-cell">Website</th>
                                     <th scope="col" class="text-right">Actions</th>
                                 </tr>
@@ -80,6 +81,9 @@
                                         </td>
                                         <td class="d-none d-md-table-cell">
                                             {{ $tenant->contact_email ?? '—' }}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge badge-primary">{{ $tenant->contacts->count() }}</span>
                                         </td>
                                         <td class="d-none d-md-table-cell">
                                             @if ($tenant->website_url)
@@ -98,6 +102,9 @@
                                                         {{ optional($selectedTenant)->id === $tenant->id ? 'Selected' : 'Select' }}
                                                     </button>
                                                 </form>
+                                                <a href="{{ route('tenants.contacts.index', $tenant) }}" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="fas fa-address-book mr-1"></i>Contacts
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>

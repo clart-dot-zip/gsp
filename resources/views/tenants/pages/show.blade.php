@@ -20,7 +20,10 @@
             @break
 
         @case('contacts')
-            @include('tenants.pages.sections.contacts', ['tenant' => $tenant])
+            @include('tenants.pages.sections.contacts', [
+                'tenant' => $tenant,
+                'contacts' => $contacts ?? collect(),
+            ])
             @break
 
         @default

@@ -126,6 +126,17 @@
                                 <i class="fas fa-tools mr-2"></i> {{ __('Manage Tenants') }}
                             </a>
                         </li>
+                        <li class="list-group-item">
+                            @if ($currentTenant)
+                                <a href="{{ route('tenants.contacts.index', $currentTenant) }}" class="d-flex align-items-center">
+                                    <i class="fas fa-address-book mr-2"></i> {{ __('Manage Contacts') }}
+                                </a>
+                            @else
+                                <span class="text-muted d-flex align-items-center">
+                                    <i class="fas fa-address-book mr-2"></i> {{ __('Select a tenant to manage contacts') }}
+                                </span>
+                            @endif
+                        </li>
                     </ul>
                 </div>
             </div>

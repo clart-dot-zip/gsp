@@ -21,7 +21,7 @@ class TenantPageController extends Controller
                 ->with('status', 'Please add or choose a tenant to continue.');
         }
 
-        $tenant = Tenant::find($tenantId);
+        $tenant = Tenant::with(['contacts.role'])->find($tenantId);
 
         if (! $tenant) {
             $request->session()->forget('tenant_id');
@@ -38,6 +38,7 @@ class TenantPageController extends Controller
             'tenant' => $tenant,
             'pageKey' => $page,
             'pageTitle' => $pages[$page],
+            'contacts' => $tenant->contacts,
         ]);
     }
 }
