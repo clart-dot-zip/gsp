@@ -3,7 +3,25 @@
         <h1 class="m-0 text-dark">{{ __('Dashboard') }}</h1>
     </x-slot>
 
+    @if (empty($currentTenant))
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            No tenant selected yet. Use the tenant picker in the top navigation or add a tenant from the admin menu to see contextual data here.
+        </div>
+    @endif
+
     <div class="row">
+        <div class="col-lg-3 col-6">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h3>{{ optional($currentTenant)->displayName() ?? 'None' }}</h3>
+                    <p>Active Tenant</p>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+        </div>
         <div class="col-lg-3 col-6">
             <div class="small-box bg-info">
                 <div class="inner">
@@ -53,11 +71,33 @@
     <div class="row">
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header border-0">
-                    <h3 class="card-title">Welcome Back</h3>
+                <div class="card-header border-0 d-flex align-items-center justify-content-between">
+                    <h3 class="card-title mb-0">Tenant Summary</h3>
+                    @if ($currentTenant)
+                        <span class="badge badge-primary">{{ $currentTenant->displayName() }}</span>
+                    @endif
                 </div>
                 <div class="card-body">
-                    <p class="mb-0">{{ __('You are logged into the AdminLTE powered dashboard. Use the sidebar to navigate between sections and start building your administration experience.') }}</p>
+                    @if ($currentTenant)
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Description</dt>
+                            <dd class="col-sm-8">{{ $currentTenant->description ?? '—' }}</dd>
+
+                            <dt class="col-sm-4">Contact Email</dt>
+                            <dd class="col-sm-8">{{ $currentTenant->contact_email ?? '—' }}</dd>
+
+                            <dt class="col-sm-4">Website</dt>
+                            <dd class="col-sm-8">
+                                @if ($currentTenant->website_url)
+                                    <a href="{{ $currentTenant->website_url }}" target="_blank" rel="noopener">{{ $currentTenant->website_url }}</a>
+                                @else
+                                    —
+                                @endif
+                            </dd>
+                        </dl>
+                    @else
+                        <p class="mb-0">Add or select a tenant to see its details here.</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -80,6 +120,11 @@
                                     <i class="fas fa-sign-out-alt mr-2"></i>{{ __('Sign Out') }}
                                 </button>
                             </form>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{{ route('tenants.manage') }}" class="d-flex align-items-center">
+                                <i class="fas fa-tools mr-2"></i> {{ __('Manage Tenants') }}
+                            </a>
                         </li>
                     </ul>
                 </div>
