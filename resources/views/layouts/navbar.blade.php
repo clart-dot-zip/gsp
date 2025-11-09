@@ -9,37 +9,52 @@
     </ul>
 
     <ul class="navbar-nav ml-auto">
+        @php
+            $navbarUser = Auth::user();
+            $canManageTenants = $navbarUser && $navbarUser->hasPermission('manage_tenants');
+        @endphp
         @if(isset($availableTenants) && $availableTenants->isNotEmpty())
-            <li class="nav-item dropdown">
-                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button">
-                    <i class="fas fa-building mr-2"></i>
-                    <span>{{ optional($currentTenant)->displayName() ?? 'Select Tenant' }}</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-right p-0">
-                    <div class="dropdown-header">Switch Tenant</div>
-                    @foreach ($availableTenants as $tenant)
-                        <form method="POST" action="{{ route('tenants.select') }}" class="dropdown-item m-0 p-0">
-                            @csrf
-                            <input type="hidden" name="tenant_id" value="{{ $tenant->id }}">
-                            <input type="hidden" name="origin" value="{{ url()->current() }}">
-                            <button type="submit" class="btn btn-link btn-block text-left {{ optional($currentTenant)->id === $tenant->id ? 'font-weight-bold text-primary' : '' }}">
-                                {{ $tenant->displayName() }}
-                            </button>
-                        </form>
-                    @endforeach
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ route('tenants.manage') }}">
-                        <i class="fas fa-cog mr-2"></i> Manage Tenants
+            @if($canManageTenants)
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button">
+                        <i class="fas fa-building mr-2"></i>
+                        <span>{{ optional($currentTenant)->displayName() ?? 'Select Tenant' }}</span>
                     </a>
-                </div>
-            </li>
+                    <div class="dropdown-menu dropdown-menu-right p-0">
+                        <div class="dropdown-header">Switch Tenant</div>
+                        @foreach ($availableTenants as $tenant)
+                            <form method="POST" action="{{ route('tenants.select') }}" class="dropdown-item m-0 p-0">
+                                @csrf
+                                <input type="hidden" name="tenant_id" value="{{ $tenant->id }}">
+                                <input type="hidden" name="origin" value="{{ url()->current() }}">
+                                <button type="submit" class="btn btn-link btn-block text-left {{ optional($currentTenant)->id === $tenant->id ? 'font-weight-bold text-primary' : '' }}">
+                                    {{ $tenant->displayName() }}
+                                </button>
+                            </form>
+                        @endforeach
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="{{ route('tenants.manage') }}">
+                            <i class="fas fa-cog mr-2"></i> Manage Tenants
+                        </a>
+                    </div>
+                </li>
+            @else
+                <li class="nav-item d-flex align-items-center">
+                    <span class="nav-link mb-0">
+                        <i class="fas fa-building mr-2"></i>
+                        {{ optional($currentTenant)->displayName() ?? 'Tenant' }}
+                    </span>
+                </li>
+            @endif
         @else
-            <li class="nav-item">
-                <a href="{{ route('tenants.manage') }}" class="nav-link text-warning">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    <span>Add a tenant</span>
-                </a>
-            </li>
+            @if($canManageTenants)
+                <li class="nav-item">
+                    <a href="{{ route('tenants.manage') }}" class="nav-link text-warning">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        <span>Add a tenant</span>
+                    </a>
+                </li>
+            @endif
         @endif
         @auth
             <li class="nav-item dropdown user-menu">

@@ -14,7 +14,7 @@ class TenantController extends Controller
      */
     public function index(Request $request): View
     {
-        $tenants = Tenant::with('contacts')->orderBy('name')->get();
+    $tenants = Tenant::withCount('contacts')->orderBy('name')->get();
         $selectedTenantId = (int) $request->session()->get('tenant_id');
         $selectedTenant = $tenants->firstWhere('id', $selectedTenantId);
 

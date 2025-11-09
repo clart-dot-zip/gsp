@@ -3,6 +3,10 @@
         <h1 class="m-0 text-dark">{{ __('Dashboard') }}</h1>
     </x-slot>
 
+    @php
+        $currentUser = Auth::user();
+    @endphp
+
     @if (empty($currentTenant))
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-circle mr-2"></i>
@@ -121,22 +125,33 @@
                                 </button>
                             </form>
                         </li>
-                        <li class="list-group-item">
-                            <a href="{{ route('tenants.manage') }}" class="d-flex align-items-center">
-                                <i class="fas fa-tools mr-2"></i> {{ __('Manage Tenants') }}
-                            </a>
-                        </li>
-                        <li class="list-group-item">
-                            @if ($currentTenant)
-                                <a href="{{ route('tenants.contacts.index', $currentTenant) }}" class="d-flex align-items-center">
-                                    <i class="fas fa-address-book mr-2"></i> {{ __('Manage Contacts') }}
+                        @if ($currentUser && $currentUser->hasPermission('manage_tenants'))
+                            <li class="list-group-item">
+                                <a href="{{ route('tenants.manage') }}" class="d-flex align-items-center">
+                                    <i class="fas fa-tools mr-2"></i> {{ __('Manage Tenants') }}
                                 </a>
-                            @else
-                                <span class="text-muted d-flex align-items-center">
-                                    <i class="fas fa-address-book mr-2"></i> {{ __('Select a tenant to manage contacts') }}
-                                </span>
-                            @endif
-                        </li>
+                            </li>
+                        @endif
+                        @if ($currentUser && $currentUser->hasPermission('manage_contacts'))
+                            <li class="list-group-item">
+                                @if ($currentTenant)
+                                    <a href="{{ route('tenants.contacts.index', $currentTenant) }}" class="d-flex align-items-center">
+                                        <i class="fas fa-address-book mr-2"></i> {{ __('Manage Contacts') }}
+                                    </a>
+                                @else
+                                    <span class="text-muted d-flex align-items-center">
+                                        <i class="fas fa-address-book mr-2"></i> {{ __('Select a tenant to manage contacts') }}
+                                    </span>
+                                @endif
+                            </li>
+                        @endif
+                        @if ($currentUser && $currentUser->hasPermission('manage_access'))
+                            <li class="list-group-item">
+                                <a href="{{ route('admin.access.index') }}" class="d-flex align-items-center">
+                                    <i class="fas fa-user-shield mr-2"></i> {{ __('Access Control') }}
+                                </a>
+                            </li>
+                        @endif
                     </ul>
                 </div>
             </div>

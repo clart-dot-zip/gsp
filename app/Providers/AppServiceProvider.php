@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('authentik', \SocialiteProviders\Authentik\Provider::class);
+            $event->extendSocialite('steam', \SocialiteProviders\Steam\Provider::class);
         });
         // Share Google Maps API key with all views
         View::share('googleMapsApiKey', env('GOOGLE_MAPS_API_KEY'));
@@ -47,9 +48,32 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
+            $user = Auth::user();
+
+            if ($user && method_exists($user, 'isTenantContact') && $user->isTenantContact()) {
+                $contact = $user->tenantContact()->with('tenant')->first();
+                $tenant = $contact ? $contact->tenant : null;
+
+                if ($tenant) {
+                    if ((int) Session::get('tenant_id') !== $tenant->id) {
+                        Session::put('tenant_id', $tenant->id);
+                    }
+
+                    $view->with('availableTenants', Collection::make([$tenant]));
+                    $view->with('currentTenant', $tenant);
+
+                    return;
+                }
+            }
+
             $tenants = Tenant::orderBy('name')->get();
             $selectedTenantId = (int) Session::get('tenant_id');
             $currentTenant = $tenants->firstWhere('id', $selectedTenantId);
+
+            if (! $currentTenant && $tenants->isNotEmpty()) {
+                $currentTenant = $tenants->first();
+                Session::put('tenant_id', $currentTenant->id);
+            }
 
             $view->with('availableTenants', $tenants);
             $view->with('currentTenant', $currentTenant);

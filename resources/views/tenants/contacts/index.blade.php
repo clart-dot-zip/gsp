@@ -57,6 +57,13 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label for="contact-steam">Steam ID</label>
+                            <input type="text" id="contact-steam" name="steam_id" class="form-control" value="{{ old('steam_id') }}" placeholder="7656119...">
+                            @error('steam_id')
+                                <span class="text-danger small">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="form-group">
                             <label for="contact-phone">Phone</label>
                             <input type="text" id="contact-phone" name="phone" class="form-control" value="{{ old('phone') }}">
                         </div>
@@ -176,6 +183,11 @@
                                 </form>
                             </div>
                             <div class="card-body">
+                                @if ($contact->steam_id)
+                                    <p class="text-muted small">
+                                        <i class="fab fa-steam-symbol mr-2"></i>Steam ID: {{ $contact->steam_id }}
+                                    </p>
+                                @endif
                                 <form method="POST" action="{{ route('tenants.contacts.update', [$tenant, $contact]) }}">
                                     @csrf
                                     @method('PUT')
@@ -202,6 +214,10 @@
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
+                                            <label for="contact-steam-{{ $contact->id }}">Steam ID</label>
+                                            <input type="text" id="contact-steam-{{ $contact->id }}" name="steam_id" class="form-control" value="{{ $contact->steam_id }}" placeholder="7656119...">
+                                        </div>
+                                        <div class="form-group col-md-4">
                                             <label for="contact-phone-{{ $contact->id }}">Phone</label>
                                             <input type="text" id="contact-phone-{{ $contact->id }}" name="phone" class="form-control" value="{{ $contact->phone }}">
                                         </div>
@@ -209,10 +225,10 @@
                                             <label for="contact-preferred-{{ $contact->id }}">Preferred Method</label>
                                             <input type="text" id="contact-preferred-{{ $contact->id }}" name="preferred_method" class="form-control" value="{{ $contact->preferred_method }}">
                                         </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="contact-notes-{{ $contact->id }}">Notes</label>
-                                            <textarea id="contact-notes-{{ $contact->id }}" name="notes" rows="2" class="form-control">{{ $contact->notes }}</textarea>
-                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="contact-notes-{{ $contact->id }}">Notes</label>
+                                        <textarea id="contact-notes-{{ $contact->id }}" name="notes" rows="2" class="form-control">{{ $contact->notes }}</textarea>
                                     </div>
                                     <div class="text-right">
                                         <button type="submit" class="btn btn-primary">

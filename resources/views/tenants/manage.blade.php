@@ -3,6 +3,10 @@
         <h1 class="m-0 text-dark">{{ __('Manage Tenants') }}</h1>
     </x-slot>
 
+    @php
+        $currentUser = Auth::user();
+    @endphp
+
     @if (session('status'))
         <div class="alert alert-success">
             {{ session('status') }}
@@ -83,7 +87,7 @@
                                             {{ $tenant->contact_email ?? '—' }}
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge badge-primary">{{ $tenant->contacts->count() }}</span>
+                                            <span class="badge badge-primary">{{ $tenant->contacts_count ?? 0 }}</span>
                                         </td>
                                         <td class="d-none d-md-table-cell">
                                             @if ($tenant->website_url)
@@ -102,9 +106,11 @@
                                                         {{ optional($selectedTenant)->id === $tenant->id ? 'Selected' : 'Select' }}
                                                     </button>
                                                 </form>
-                                                <a href="{{ route('tenants.contacts.index', $tenant) }}" class="btn btn-sm btn-outline-secondary">
-                                                    <i class="fas fa-address-book mr-1"></i>Contacts
-                                                </a>
+                                                @if ($currentUser && $currentUser->hasPermission('manage_contacts'))
+                                                    <a href="{{ route('tenants.contacts.index', $tenant) }}" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-address-book mr-1"></i>Contacts
+                                                    </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

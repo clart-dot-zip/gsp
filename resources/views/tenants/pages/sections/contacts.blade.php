@@ -2,6 +2,7 @@
     $contacts = $contacts ?? collect();
     $primaryContact = $contacts->firstWhere('role.name', 'Primary Contact') ?? $contacts->first();
     $preferredChannel = $primaryContact?->preferred_method ?? $primaryContact?->role?->name ?? 'Not set';
+    $steamEnabled = $contacts->whereNotNull('steam_id')->count();
 @endphp
 
 <div class="row">
@@ -15,6 +16,7 @@
                 <ul class="list-unstyled mb-0">
                     <li class="mb-3"><i class="fas fa-id-badge text-primary mr-2"></i> {{ $contacts->count() }} named contacts</li>
                     <li class="mb-3"><i class="fas fa-user-shield text-success mr-2"></i> Primary contact: {{ $primaryContact?->name ?? 'Not defined' }}</li>
+                    <li class="mb-3"><i class="fab fa-steam-symbol text-secondary mr-2"></i> Steam-enabled contacts: {{ $steamEnabled }}</li>
                     <li class="mb-0"><i class="fas fa-envelope text-info mr-2"></i> Preferred channel: {{ $preferredChannel }}</li>
                 </ul>
             </div>
@@ -41,6 +43,7 @@
                                 <th>Name</th>
                                 <th>Role</th>
                                 <th>Email</th>
+                                <th class="d-none d-lg-table-cell">Steam ID</th>
                                 <th class="d-none d-md-table-cell">Phone</th>
                                 <th>Preferred</th>
                             </tr>
@@ -55,12 +58,13 @@
                                         </span>
                                     </td>
                                     <td><a href="mailto:{{ $contact->email }}">{{ $contact->email }}</a></td>
+                                    <td class="d-none d-lg-table-cell">{{ $contact->steam_id ?? '—' }}</td>
                                     <td class="d-none d-md-table-cell">{{ $contact->phone ?? '—' }}</td>
                                     <td>{{ $contact->preferred_method ?? '—' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">
+                                    <td colspan="6" class="text-center py-4">
                                         <em>No contacts recorded yet. Use the manage contacts screen to add your first point of contact.</em>
                                     </td>
                                 </tr>

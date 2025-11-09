@@ -34,6 +34,14 @@ class TenantPageController extends Controller
 
         abort_unless(array_key_exists($page, $pages), 404);
 
+        $user = $request->user();
+        if ($user && method_exists($user, 'isTenantContact') && $user->isTenantContact()) {
+            $contactTenantId = $user->tenantContact ? $user->tenantContact->tenant_id : null;
+            if ($contactTenantId !== $tenant->id) {
+                abort(403);
+            }
+        }
+
         return view('tenants.pages.show', [
             'tenant' => $tenant,
             'pageKey' => $page,

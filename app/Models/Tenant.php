@@ -8,8 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
+ * @property int $id
  * @property string $name
  * @property string|null $slug
+ * @property-read \Illuminate\Support\Collection<int, \App\Models\TenantContact> $contacts
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder|Tenant query()
+ *
+ * @mixin \Illuminate\Database\Eloquent\Builder
  */
 class Tenant extends Model
 {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContactRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 
 class ContactRoleController extends Controller
 {
@@ -18,9 +19,9 @@ class ContactRoleController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        ContactRole::create($data);
+    ContactRole::create($data);
 
-        return redirect()->back()->with('status', 'Role created.');
+    return Redirect::back()->with('status', 'Role created.');
     }
 
     /**
@@ -33,9 +34,9 @@ class ContactRoleController extends Controller
             'description' => ['nullable', 'string'],
         ]);
 
-        $role->update($data);
+    $role->update($data);
 
-        return redirect()->back()->with('status', 'Role updated.');
+    return Redirect::back()->with('status', 'Role updated.');
     }
 
     /**
@@ -44,13 +45,13 @@ class ContactRoleController extends Controller
     public function destroy(ContactRole $role): RedirectResponse
     {
         if ($role->contacts()->exists()) {
-            return redirect()->back()->withErrors([
+            return Redirect::back()->withErrors([
                 'role' => 'Cannot delete a role that is currently assigned to contacts.',
             ]);
         }
 
         $role->delete();
 
-        return redirect()->back()->with('status', 'Role removed.');
+        return Redirect::back()->with('status', 'Role removed.');
     }
 }

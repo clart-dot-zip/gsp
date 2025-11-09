@@ -16,6 +16,14 @@
             </div>
         @endauth
 
+        @php
+            $sidebarUser = Auth::user();
+            $canViewTenantPages = $sidebarUser && $sidebarUser->hasPermission('view_tenant_pages');
+            $canManageTenants = $sidebarUser && $sidebarUser->hasPermission('manage_tenants');
+            $canManageContacts = $sidebarUser && $sidebarUser->hasPermission('manage_contacts');
+            $canManageAccess = $sidebarUser && $sidebarUser->hasPermission('manage_access');
+        @endphp
+
         <nav class="mt-2 flex-grow-1 d-flex flex-column">
             <ul class="nav nav-pills nav-sidebar flex-column flex-grow-1" data-widget="treeview" role="menu" data-accordion="false">
                 <li class="nav-item">
@@ -24,7 +32,7 @@
                         <p>Dashboard</p>
                     </a>
                 </li>
-                @if(isset($tenantPages) && count($tenantPages) > 0)
+                @if($canViewTenantPages && isset($tenantPages) && count($tenantPages) > 0)
                     <li class="nav-item has-treeview {{ request()->routeIs('tenants.pages.*') ? 'menu-open' : '' }}">
                         <a href="#" class="nav-link {{ request()->routeIs('tenants.pages.*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-layer-group"></i>
@@ -57,26 +65,46 @@
                 </li>
             </ul>
         </nav>
-        <nav class="mt-auto">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                <li class="nav-item has-treeview {{ request()->routeIs('tenants.manage') ? 'menu-open' : '' }}">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-tools"></i>
-                        <p>
-                            Admin
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{{ route('tenants.manage') }}" class="nav-link {{ request()->routeIs('tenants.manage') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Manage Tenants</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-        </nav>
+        @if($canManageTenants || $canManageContacts || $canManageAccess)
+            <nav class="mt-auto">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    <li class="nav-item has-treeview {{ request()->routeIs('tenants.manage') || request()->routeIs('tenants.contacts.*') || request()->routeIs('admin.access.*') ? 'menu-open' : '' }}">
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-tools"></i>
+                            <p>
+                                Admin
+                                <i class="right fas fa-angle-left"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            @if($canManageTenants)
+                                <li class="nav-item">
+                                    <a href="{{ route('tenants.manage') }}" class="nav-link {{ request()->routeIs('tenants.manage') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Manage Tenants</p>
+                                    </a>
+                                </li>
+                            @endif
+                            @if($canManageContacts)
+                                <li class="nav-item">
+                                    <a href="{{ $currentTenant ? route('tenants.contacts.index', $currentTenant) : '#' }}" class="nav-link {{ request()->routeIs('tenants.contacts.*') ? 'active' : '' }} {{ empty($currentTenant) ? 'disabled text-muted' : '' }}" @if(empty($currentTenant)) aria-disabled="true" tabindex="-1" onclick="return false;" @endif>
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Manage Contacts</p>
+                                    </a>
+                                </li>
+                            @endif
+                            @if($canManageAccess)
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.access.index') }}" class="nav-link {{ request()->routeIs('admin.access.*') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Access Control</p>
+                                    </a>
+                                </li>
+                            @endif
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        @endif
     </div>
 </aside>
