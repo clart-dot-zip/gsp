@@ -26,6 +26,8 @@ use Illuminate\Support\Collection;
  * @property Carbon|null $opened_at
  * @property Carbon|null $resolved_at
  * @property Carbon|null $closed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  *
  * @method static Builder|self forTenant(int|Tenant $tenant)
  * @method static Builder|self query()

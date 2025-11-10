@@ -51,6 +51,9 @@ All endpoints return JSON with a top-level `data` key (except 204 deletes).
 - `PUT /api/v1/tenant/bans/{ban}` → update public reason, admin notes, ban length, or timestamp.
 - `DELETE /api/v1/tenant/bans/{ban}` → lift/remove a recorded ban.
 
+### Support tickets
+- `POST /api/v1/tenant/support-tickets` → create a new support/helpdesk ticket scoped to the tenant. Accepts optional `external_reference` for idempotent retries, links a triggering player by id or SteamID, and bulk associates related player ids.
+
 ## Payload Reference
 Use the following contracts when marshalling data from ULX.
 
@@ -130,6 +133,38 @@ Use the following contracts when marshalling data from ULX.
     "display_name": "Clart",
     "steam_id": "76561198000000000"
   }
+}
+```
+
+### Support ticket object (response)
+```json
+{
+  "id": 314,
+  "tenant_id": 7,
+  "subject": "Server crash during map vote",
+  "description": "Crash dump attached in follow-up note.",
+  "status": "open",
+  "priority": "high",
+  "external_reference": "gm-ticket-12345",
+  "opened_at": "2025-11-10T19:02:15+00:00",
+  "resolved_at": null,
+  "closed_at": null,
+  "created_at": "2025-11-10T19:02:15+00:00",
+  "updated_at": "2025-11-10T19:02:15+00:00",
+  "created_by": {
+    "user_id": null,
+    "contact_id": null,
+    "player_id": 101,
+    "player": {
+      "id": 101,
+      "display_name": "Clart",
+      "steam_id": "76561198000000000"
+    }
+  },
+  "players": [
+    { "id": 101, "display_name": "Clart", "steam_id": "76561198000000000" },
+    { "id": 102, "display_name": "Helper", "steam_id": "76561198000000001" }
+  ]
 }
 ```
 
@@ -221,6 +256,34 @@ Schemas describe accepted fields for create/update endpoints. Omitted properties
     "banned_at": { "type": ["string", "null"], "format": "date-time" }
   },
   "required": ["player_name", "reason", "length_code"]
+}
+```
+
+### Tenant support ticket schema
+```json
+{
+  "$id": "https://gsp.example/schema/tenant-support-ticket.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "subject": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "description": { "type": ["string", "null"] },
+    "priority": {
+      "type": ["string", "null"],
+      "enum": ["low", "normal", "high", "critical"]
+    },
+    "external_reference": { "type": ["string", "null"], "maxLength": 255 },
+    "created_by_player_id": { "type": ["integer", "null"], "minimum": 1 },
+    "created_by_player_steam_id": { "type": ["string", "null"], "maxLength": 64 },
+    "player_ids": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "uniqueItems": true
+    },
+    "opened_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "required": ["subject"]
 }
 ```
 > **Tip:** Normalize `length_code` to lowercase when storing; the API returns both the stored value and a display-friendly uppercase `length_label`.

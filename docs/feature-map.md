@@ -97,6 +97,7 @@ This document summarizes the major features, admin tools, and tenant-facing expe
   - `GET /tenant/bans` → Enumerate bans (supports filters + pagination) for in-game checks
   - `POST /tenant/bans` → Record bans issued in-game (`length_code` accepts `0` for permanent or `<number><unit>` such as `30m`, `12h`, `7d`)
   - `PUT /tenant/bans/{ban}` / `DELETE /tenant/bans/{ban}` → Amend or revoke bans from automation (length updates return both `length_code` and uppercase `length_label`)
+  - `POST /tenant/support-tickets` → Create tenant helpdesk tickets from the game server (supports optional external reference and player linking)
 - **Notes:** Successful requests refresh `tenant_api_keys.last_used_at` for observability.
 
 ## Profile Management

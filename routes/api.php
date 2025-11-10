@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TenantGroupController;
 use App\Http\Controllers\Api\TenantPermissionController;
 use App\Http\Controllers\Api\TenantPlayerController;
+use App\Http\Controllers\Api\TenantSupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('tenant.api')
@@ -36,4 +37,5 @@ Route::middleware('tenant.api')
         Route::delete('/tenant/bans/{ban}', [TenantBanController::class, 'destroy']);
         Route::get('/tenant/logs', [TenantDataController::class, 'logs']);
         Route::post('/tenant/logs', [TenantDataController::class, 'storeLog']);
+        Route::post('/tenant/support-tickets', [TenantSupportTicketController::class, 'store']);
     });
