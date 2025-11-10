@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\TenantBanController;
 use App\Http\Controllers\Api\TenantDataController;
 use App\Http\Controllers\Api\TenantGroupController;
 use App\Http\Controllers\Api\TenantPermissionController;
@@ -28,6 +29,11 @@ Route::middleware('tenant.api')
         Route::get('/tenant/players/{player}', [TenantPlayerController::class, 'show']);
         Route::put('/tenant/players/{player}', [TenantPlayerController::class, 'update']);
         Route::delete('/tenant/players/{player}', [TenantPlayerController::class, 'destroy']);
+        Route::get('/tenant/bans', [TenantBanController::class, 'index']);
+        Route::post('/tenant/bans', [TenantBanController::class, 'store']);
+        Route::get('/tenant/bans/{ban}', [TenantBanController::class, 'show']);
+        Route::put('/tenant/bans/{ban}', [TenantBanController::class, 'update']);
+        Route::delete('/tenant/bans/{ban}', [TenantBanController::class, 'destroy']);
         Route::get('/tenant/logs', [TenantDataController::class, 'logs']);
         Route::post('/tenant/logs', [TenantDataController::class, 'storeLog']);
     });

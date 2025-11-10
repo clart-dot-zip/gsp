@@ -85,9 +85,18 @@ This document summarizes the major features, admin tools, and tenant-facing expe
   - `GET /tenant` → Core tenant profile metadata
   - `GET /tenant/contacts` → Contact directory used by dashboards or in-game menus
   - `GET /tenant/groups` → Group + permission matrix for role sync
+  - `POST /tenant/groups` → Create tenant role during sync
+  - `PUT /tenant/groups/{group}` / `DELETE /tenant/groups/{group}` → Maintain role metadata from the game server
   - `GET /tenant/permissions` → Canonical permission catalog
+  - `POST /tenant/permissions` → Register custom permission slugs from ULX
   - `GET /tenant/logs` → Latest tenant activity entries (50 items)
   - `POST /tenant/logs` → Write integration-originated events into the activity log (used by Garry's Mod collectors)
+  - `GET /tenant/players` → Player roster with group assignments for live sync
+  - `POST /tenant/players` / `PUT /tenant/players/{player}` → Upsert player records from server events
+  - `DELETE /tenant/players/{player}` → Remove departed players
+  - `GET /tenant/bans` → Enumerate bans (supports filters + pagination) for in-game checks
+  - `POST /tenant/bans` → Record bans issued in-game
+  - `PUT /tenant/bans/{ban}` / `DELETE /tenant/bans/{ban}` → Amend or revoke bans from automation
 - **Notes:** Successful requests refresh `tenant_api_keys.last_used_at` for observability.
 
 ## Profile Management

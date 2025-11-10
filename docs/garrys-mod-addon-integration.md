@@ -44,6 +44,13 @@ All endpoints return JSON with a top-level `data` key (except 204 deletes).
 - `PUT /api/v1/tenant/players/{player}` → update profile fields, SteamID, avatar, last synced timestamp, and group assignments.
 - `DELETE /api/v1/tenant/players/{player}` → remove player and detach groups.
 
+### Ban management
+- `GET /api/v1/tenant/bans` → list bans (supports `steam_id`, `search`, `player_id`, `since`, `page`, `per_page`, and `include_admin_reason` query params).
+- `POST /api/v1/tenant/bans` → record a new ban for a player (optional `tenant_player_id` auto-links roster entries).
+- `GET /api/v1/tenant/bans/{ban}` → fetch a single ban entry (`include_admin_reason=1` to expose private notes).
+- `PUT /api/v1/tenant/bans/{ban}` → update public reason, admin notes, or ban timestamp.
+- `DELETE /api/v1/tenant/bans/{ban}` → lift/remove a recorded ban.
+
 ## Payload Reference
 Use the following contracts when marshalling data from ULX.
 
@@ -93,6 +100,34 @@ Use the following contracts when marshalling data from ULX.
   "groups": [
     { "id": 42, "name": "Senior Admin", "slug": "senior-admin" }
   ]
+}
+```
+
+### Ban object (response)
+```json
+{
+  "id": 55,
+  "tenant_id": 7,
+  "tenant_player_id": 101,
+  "player_name": "Clart",
+  "player_steam_id": "76561198000000000",
+  "reason": "Mass RDM",
+  "admin_reason": "Harassment in admin sit", // only present when include_admin_reason=true
+  "banned_at": "2025-11-10T18:45:12+00:00",
+  "created_at": "2025-11-10T18:45:12+00:00",
+  "updated_at": "2025-11-10T18:45:12+00:00",
+  "banning_admin": {
+    "user_id": null,
+    "user_name": null,
+    "contact_id": 12,
+    "contact_name": "Server Owner",
+    "label": "Server Owner"
+  },
+  "player": {
+    "id": 101,
+    "display_name": "Clart",
+    "steam_id": "76561198000000000"
+  }
 }
 ```
 
@@ -160,6 +195,25 @@ Schemas describe accepted fields for create/update endpoints. Omitted properties
     }
   },
   "required": ["display_name"]
+}
+```
+
+### Tenant ban schema
+```json
+{
+  "$id": "https://gsp.example/schema/tenant-ban.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "player_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+    "steam_id": { "type": ["string", "null"], "maxLength": 64 },
+    "tenant_player_id": { "type": ["integer", "null"], "minimum": 1 },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "admin_reason": { "type": ["string", "null"], "maxLength": 1000 },
+    "banned_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "required": ["player_name", "reason"]
 }
 ```
 
