@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\TenantActivityLog;
 use App\Models\TenantApiKey;
+use App\Models\TenantBan;
 use App\Models\TenantContact;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -107,6 +108,14 @@ class Tenant extends Model
     public function supportTickets(): HasMany
     {
         return $this->hasMany(TenantSupportTicket::class)->latest('opened_at');
+    }
+
+    /**
+     * @return HasMany<TenantBan>
+     */
+    public function bans(): HasMany
+    {
+        return $this->hasMany(TenantBan::class)->latest('banned_at');
     }
 
     /**

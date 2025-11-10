@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tenant;
 use App\Models\TenantActivityLog;
+use App\Models\TenantBan;
 use App\Models\TenantSupportTicket;
 use App\Models\TenantSupportTicketAssignee;
 use App\Models\TenantContact;
@@ -93,8 +94,12 @@ class TenantPageController extends Controller
         $supportContacts = collect();
         $supportPlayers = collect();
         $supportTicketStats = [];
+        $tenantBans = null;
+        $banFilters = [];
         $supportsUser = $user instanceof User ? $user : null;
         $canManageSupport = $supportsUser ? $supportsUser->hasPermission('manage_support_tickets') : false;
+        $canManageBans = $tenantPageUser ? $tenantPageUser->hasPermission('manage_tenant_bans') : false;
+        $canViewBanAdminReason = $tenantPageUser ? $tenantPageUser->hasPermission('view_tenant_ban_admin_reason') : false;
 
         $hasSupportPermission = function (string $permission) use ($supportsUser, $canManageSupport): bool {
             if ($canManageSupport) {
@@ -118,6 +123,12 @@ class TenantPageController extends Controller
             'is_player' => $isPlayerSession,
         ];
 
+        $banPermissions = [
+            'can_manage' => $canManageBans,
+            'can_view_admin_reason' => $canViewBanAdminReason,
+            'is_player' => $isPlayerSession,
+        ];
+
         if ($page === 'activity_logs') {
             $activityLogs = TenantActivityLog::with(['user'])
                 ->where('tenant_id', $tenant->id)
@@ -133,6 +144,40 @@ class TenantPageController extends Controller
                     'permission_count' => $tenant->permissionDefinitions()->count(),
                     'player_count' => $tenant->players()->count(),
                 ];
+                break;
+
+            case 'bans':
+                $banFilters = [
+                    'search' => trim((string) $request->query('search', '')),
+                ];
+
+                $banQuery = TenantBan::query()
+                    ->with([
+                        'player',
+                        'createdByContact',
+                        'createdByUser',
+                    ])
+                    ->forTenant($tenant)
+                    ->orderByDesc('banned_at')
+                    ->orderByDesc('created_at');
+
+                if ($banFilters['search'] !== '') {
+                    $searchTerm = '%'.$banFilters['search'].'%';
+                    $banQuery->where(function ($query) use ($searchTerm, $canViewBanAdminReason) {
+                        $query->where('player_name', 'like', $searchTerm)
+                            ->orWhere('player_steam_id', 'like', $searchTerm)
+                            ->orWhere('reason', 'like', $searchTerm);
+
+                        if ($canViewBanAdminReason) {
+                            $query->orWhere('admin_reason', 'like', $searchTerm);
+                        }
+                    });
+                }
+
+                $tenantBans = $banQuery
+                    ->paginate(15)
+                    ->appends($request->query());
+
                 break;
 
             case 'support_tickets':
@@ -277,6 +322,9 @@ class TenantPageController extends Controller
             'supportPlayers' => $supportPlayers,
             'supportTicketPermissions' => $supportTicketPermissions,
             'supportTicketStats' => $supportTicketStats,
+            'tenantBans' => $tenantBans,
+            'banFilters' => $banFilters,
+            'banPermissions' => $banPermissions,
             'isPlayerSession' => $isPlayerSession,
         ]);
     }

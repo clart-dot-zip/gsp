@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -52,5 +53,13 @@ class TenantPlayer extends Model
     {
         return $this->belongsToMany(TenantGroup::class, 'tenant_player_group')
             ->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<TenantBan>
+     */
+    public function bans(): HasMany
+    {
+        return $this->hasMany(TenantBan::class, 'tenant_player_id');
     }
 }

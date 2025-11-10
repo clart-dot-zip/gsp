@@ -23,13 +23,21 @@
             @break
 
         @case('players')
-        @case('bans')
         @case('blacklists')
         @case('warnings')
         @case('logs')
             @include('tenants.pages.sections.placeholder', [
                 'tenant' => $tenant,
                 'pageTitle' => $pageTitle,
+            ])
+            @break
+
+        @case('bans')
+            @include('tenants.pages.sections.bans', [
+                'tenant' => $tenant,
+                'tenantBans' => $tenantBans,
+                'banFilters' => $banFilters,
+                'banPermissions' => $banPermissions,
             ])
             @break
 

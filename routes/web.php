@@ -10,6 +10,7 @@ use App\Http\Controllers\TenantController;
 use App\Http\Controllers\TenantAccessController;
 use App\Http\Controllers\TenantPageController;
 use App\Http\Controllers\TenantSelectionController;
+use App\Http\Controllers\TenantBanController;
 use App\Http\Controllers\TenantPermissions\TenantGroupController;
 use App\Http\Controllers\TenantPermissions\TenantGroupPermissionController;
 use App\Http\Controllers\TenantPermissions\TenantPermissionController;
@@ -84,7 +85,7 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
             Route::delete('/players/{player}/groups/{group}', [TenantPlayerGroupController::class, 'detach'])->name('players.groups.detach');
         });
 
-    Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->group(function () {
+        Route::prefix('/tenants/{tenant}/support')->name('tenants.support.')->group(function () {
             Route::post('/tickets', [TenantSupportTicketController::class, 'store'])->name('tickets.store')->middleware('permission:support_tickets_create');
             Route::put('/tickets/{ticket}', [TenantSupportTicketController::class, 'update'])->name('tickets.update')->middleware('permission:support_tickets_collaborate');
             Route::post('/tickets/{ticket}/claim', [TenantSupportTicketController::class, 'claim'])->name('tickets.claim')->middleware('permission:support_tickets_collaborate');
@@ -94,6 +95,11 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
             Route::delete('/tickets/{ticket}/notes/{note}', [TenantSupportTicketNoteController::class, 'destroy'])->name('tickets.notes.destroy')->middleware('permission:support_tickets_collaborate');
 
             Route::delete('/tickets/{ticket}/attachments/{attachment}', [TenantSupportTicketAttachmentController::class, 'destroy'])->name('tickets.attachments.destroy')->middleware('permission:support_tickets_collaborate');
+        });
+
+        Route::prefix('/tenants/{tenant}/bans')->name('tenants.bans.')->middleware('permission:manage_tenant_bans')->group(function () {
+            Route::get('/create', [TenantBanController::class, 'create'])->name('create');
+            Route::post('/', [TenantBanController::class, 'store'])->name('store');
         });
     });
 

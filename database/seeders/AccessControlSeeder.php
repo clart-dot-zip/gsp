@@ -26,6 +26,8 @@ class AccessControlSeeder extends Seeder
             ['slug' => 'manage_access', 'name' => 'Manage Access Control'],
             ['slug' => 'manage_api_keys', 'name' => 'Manage Tenant API Keys'],
             ['slug' => 'manage_support_tickets', 'name' => 'Manage Support Tickets'],
+            ['slug' => 'manage_tenant_bans', 'name' => 'Manage Tenant Bans'],
+            ['slug' => 'view_tenant_ban_admin_reason', 'name' => 'View Tenant Ban Admin Reason'],
         ];
 
         $tenantCategories = Config::get('tenant.categories', []);
@@ -83,11 +85,14 @@ class AccessControlSeeder extends Seeder
             ->only([
                 'view_dashboard',
                 'view_tenant_pages',
+                'manage_tenant_bans',
+                'view_tenant_ban_admin_reason',
                 'support_tickets_collaborate',
                 'support_tickets_comment',
                 'support_tickets_attach',
                 'support_tickets_create',
                 TenantPageAuthorization::permissionForPage('support_tickets'),
+                TenantPageAuthorization::permissionForPage('bans'),
             ])
             ->filter()
             ->values()
@@ -99,6 +104,7 @@ class AccessControlSeeder extends Seeder
             ->only([
                 TenantPageAuthorization::permissionForPage('overview'),
                 TenantPageAuthorization::permissionForPage('support_tickets'),
+                TenantPageAuthorization::permissionForPage('bans'),
                 'support_tickets_create',
                 'support_tickets_comment',
                 'support_tickets_attach',
