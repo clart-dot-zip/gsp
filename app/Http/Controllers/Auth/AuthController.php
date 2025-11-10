@@ -158,14 +158,9 @@ class AuthController extends Controller
 
         if (! $user) {
             $user = new User();
-            $user->email = $preferredEmail ?: $fallbackEmail;
-        } else {
-            if ($preferredEmail && $user->email !== $preferredEmail) {
-                $user->email = $preferredEmail;
-            } elseif (! $user->email) {
-                $user->email = $fallbackEmail;
-            }
         }
+
+        $user->email = $this->resolveContactEmail($preferredEmail, $fallbackEmail, $user->id);
 
         if ($preferredName && $user->name !== $preferredName) {
             $user->name = $preferredName;
@@ -226,6 +221,41 @@ class AuthController extends Controller
         }
 
         return Redirect::route('tenants.pages.show', ['page' => 'support_tickets']);
+    }
+
+    /**
+     * Determine a safe email address for a contact without violating uniqueness constraints.
+     */
+    protected function resolveContactEmail(?string $preferredEmail, string $fallbackEmail, ?int $currentUserId = null): string
+    {
+        if ($preferredEmail) {
+            $exists = User::query()
+                ->where('email', $preferredEmail)
+                ->when($currentUserId, static fn ($query, $id) => $query->where('id', '!=', $id))
+                ->exists();
+
+            if (! $exists) {
+                return $preferredEmail;
+            }
+
+            Log::warning('Steam contact login preferred email already in use. Falling back to generated email.', [
+                'preferred_email' => $preferredEmail,
+                'current_user_id' => $currentUserId,
+            ]);
+        }
+
+        $candidate = $fallbackEmail;
+        $suffix = 0;
+
+        while (User::query()
+            ->where('email', $candidate)
+            ->when($currentUserId, static fn ($query, $id) => $query->where('id', '!=', $id))
+            ->exists()) {
+            $suffix++;
+            $candidate = Str::before($fallbackEmail, '@') . '-' . $suffix . '@' . Str::after($fallbackEmail, '@');
+        }
+
+        return $candidate;
     }
 
     protected function completePlayerSteamLogin(Request $request, string $steamId)
