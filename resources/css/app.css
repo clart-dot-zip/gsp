@@ -25,3 +25,39 @@
 	backdrop-filter: blur(14px);
 	background-color: rgba(15, 23, 42, 0.55);
 }
+
+.permission-card + .permission-card {
+	border-top: 1px solid #f1f5f9;
+}
+
+.permission-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	text-align: left;
+	color: inherit;
+	text-decoration: none;
+}
+
+.permission-toggle-label {
+	flex: 1 1 auto;
+}
+
+.permission-toggle:hover,
+.permission-toggle:focus {
+	text-decoration: none;
+}
+
+.permission-toggle-icon {
+	margin-left: 0.5rem;
+	transition: transform 0.2s ease-in-out;
+}
+
+.permission-toggle[aria-expanded="true"] .permission-toggle-icon {
+	transform: rotate(180deg);
+}
+
+.permission-collapse {
+	border-top: 1px solid #e2e8f0;
+}

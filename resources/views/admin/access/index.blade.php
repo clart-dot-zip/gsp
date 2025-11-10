@@ -87,18 +87,27 @@
                     <h3 class="card-title mb-0">Group Permissions</h3>
                 </div>
                 <div class="card-body p-0">
-                    <div class="accordion" id="group-permissions">
+                    <div class="accordion" id="group-permissions" data-permission-accordion>
                         @foreach ($groups as $group)
-                            <div class="card mb-0">
+                            <div class="card mb-0 permission-card">
                                 <div class="card-header" id="heading-{{ $group->id }}">
                                     <h3 class="card-title mb-0">
-                                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-{{ $group->id }}" aria-expanded="false" aria-controls="collapse-{{ $group->id }}">
-                                            {{ $group->name }}
+                                        <button
+                                            class="btn btn-link permission-toggle"
+                                            type="button"
+                                            data-permission-target="#permission-panel-{{ $group->id }}"
+                                            aria-expanded="false"
+                                            aria-controls="permission-panel-{{ $group->id }}"
+                                        >
+                                            <span class="permission-toggle-label">{{ $group->name }}</span>
+                                            <span class="permission-toggle-icon" aria-hidden="true">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </span>
                                         </button>
                                     </h3>
                                 </div>
-                                <div id="collapse-{{ $group->id }}" class="collapse" data-parent="#group-permissions">
-                                    <div class="card-body text-body">
+                                <div id="permission-panel-{{ $group->id }}" class="permission-collapse">
+                                    <div class="card-body">
                                         <form method="POST" action="{{ route('admin.access.groups.permissions.sync', $group) }}">
                                             @csrf
                                             @method('PUT')
