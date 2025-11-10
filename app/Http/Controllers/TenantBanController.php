@@ -40,6 +40,7 @@ class TenantBanController extends Controller
                 'integer',
                 Rule::exists('tenant_players', 'id')->where('tenant_id', $tenant->id),
             ],
+            'length_code' => ['required', 'string', 'max:16', 'regex:/^(0|[0-9]+[smhdwy])$/i'],
             'reason' => ['required', 'string', 'max:500'],
             'admin_reason' => ['nullable', 'string', 'max:1000'],
             'banned_at' => ['nullable', 'date'],
@@ -72,6 +73,7 @@ class TenantBanController extends Controller
             : Carbon::now();
 
         $reason = trim($data['reason']);
+        $lengthCode = $this->normalizeLengthCode($data['length_code']);
         $adminReason = $canViewAdminReason && isset($data['admin_reason']) && $data['admin_reason'] !== ''
             ? trim($data['admin_reason'])
             : null;
@@ -81,6 +83,7 @@ class TenantBanController extends Controller
             'tenant_player_id' => $player->id,
             'player_name' => $player->display_name,
             'player_steam_id' => $player->steam_id,
+            'length_code' => $lengthCode,
             'reason' => $reason,
             'admin_reason' => $adminReason,
             'created_by_user_id' => $createdByUserId,
@@ -101,5 +104,12 @@ class TenantBanController extends Controller
     protected function canViewAdminReason($user): bool
     {
         return $user instanceof User && $user->hasPermission('view_tenant_ban_admin_reason');
+    }
+
+    private function normalizeLengthCode(string $code): string
+    {
+        $trimmed = strtolower(trim($code));
+
+        return $trimmed === '' ? '0' : $trimmed;
     }
 }

@@ -46,9 +46,9 @@ All endpoints return JSON with a top-level `data` key (except 204 deletes).
 
 ### Ban management
 - `GET /api/v1/tenant/bans` → list bans (supports `steam_id`, `search`, `player_id`, `since`, `page`, `per_page`, and `include_admin_reason` query params).
-- `POST /api/v1/tenant/bans` → record a new ban for a player (optional `tenant_player_id` auto-links roster entries).
+- `POST /api/v1/tenant/bans` → record a new ban for a player (optional `tenant_player_id` auto-links roster entries). `length_code` accepts either `0` (permanent) or `<number><unit>` (e.g. `30m`, `12h`, `7d`, `2w`, `1y`).
 - `GET /api/v1/tenant/bans/{ban}` → fetch a single ban entry (`include_admin_reason=1` to expose private notes).
-- `PUT /api/v1/tenant/bans/{ban}` → update public reason, admin notes, or ban timestamp.
+- `PUT /api/v1/tenant/bans/{ban}` → update public reason, admin notes, ban length, or timestamp.
 - `DELETE /api/v1/tenant/bans/{ban}` → lift/remove a recorded ban.
 
 ## Payload Reference
@@ -111,6 +111,8 @@ Use the following contracts when marshalling data from ULX.
   "tenant_player_id": 101,
   "player_name": "Clart",
   "player_steam_id": "76561198000000000",
+  "length_code": "1w",
+  "length_label": "1W",
   "reason": "Mass RDM",
   "admin_reason": "Harassment in admin sit", // only present when include_admin_reason=true
   "banned_at": "2025-11-10T18:45:12+00:00",
@@ -209,13 +211,19 @@ Schemas describe accepted fields for create/update endpoints. Omitted properties
     "player_name": { "type": "string", "minLength": 1, "maxLength": 255 },
     "steam_id": { "type": ["string", "null"], "maxLength": 64 },
     "tenant_player_id": { "type": ["integer", "null"], "minimum": 1 },
+    "length_code": {
+      "type": "string",
+      "pattern": "^(0|[0-9]+[smhdwy])$",
+      "description": "0 for permanent or <number><unit>; units: s, m, h, d, w, y"
+    },
     "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
     "admin_reason": { "type": ["string", "null"], "maxLength": 1000 },
     "banned_at": { "type": ["string", "null"], "format": "date-time" }
   },
-  "required": ["player_name", "reason"]
+  "required": ["player_name", "reason", "length_code"]
 }
 ```
+> **Tip:** Normalize `length_code` to lowercase when storing; the API returns both the stored value and a display-friendly uppercase `length_label`.
 
 ## Integration Tips
 - Cache `GET /tenant/groups` and `/tenant/permissions` results locally and refresh on a timer to limit API usage.

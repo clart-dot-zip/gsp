@@ -96,6 +96,7 @@ class TenantBanController extends Controller
             'player_name' => ['required', 'string', 'max:255'],
             'steam_id' => ['nullable', 'string', 'max:64'],
             'tenant_player_id' => ['nullable', 'integer'],
+            'length_code' => ['required', 'string', 'max:16', 'regex:/^(0|[0-9]+[smhdwy])$/i'],
             'reason' => ['required', 'string', 'max:500'],
             'admin_reason' => ['nullable', 'string', 'max:1000'],
             'banned_at' => ['nullable', 'date'],
@@ -114,6 +115,7 @@ class TenantBanController extends Controller
         $playerName = trim($data['player_name']);
         $steamId = isset($data['steam_id']) && $data['steam_id'] !== '' ? trim($data['steam_id']) : ($player ? $player->steam_id : null);
         $bannedAt = ! empty($data['banned_at']) ? Carbon::parse($data['banned_at']) : Carbon::now();
+        $lengthCode = $this->normalizeLengthCode($data['length_code']);
         $adminReason = isset($data['admin_reason']) && $data['admin_reason'] !== '' ? trim($data['admin_reason']) : null;
 
         $ban = TenantBan::create([
@@ -121,6 +123,7 @@ class TenantBanController extends Controller
             'tenant_player_id' => $player ? $player->id : null,
             'player_name' => $playerName,
             'player_steam_id' => $steamId,
+            'length_code' => $lengthCode,
             'reason' => trim($data['reason']),
             'admin_reason' => $adminReason,
             'banned_at' => $bannedAt,
@@ -159,6 +162,7 @@ class TenantBanController extends Controller
             'reason' => ['sometimes', 'string', 'max:500'],
             'admin_reason' => ['nullable', 'string', 'max:1000'],
             'banned_at' => ['nullable', 'date'],
+            'length_code' => ['sometimes', 'string', 'max:16', 'regex:/^(0|[0-9]+[smhdwy])$/i'],
         ]);
 
         if (array_key_exists('player_name', $data)) {
@@ -177,6 +181,10 @@ class TenantBanController extends Controller
 
         if (array_key_exists('banned_at', $data)) {
             $tenantBan->banned_at = $data['banned_at'] ? Carbon::parse($data['banned_at']) : null;
+        }
+
+        if (array_key_exists('length_code', $data)) {
+            $tenantBan->length_code = $this->normalizeLengthCode($data['length_code']);
         }
 
         $tenantBan->save();
@@ -250,6 +258,8 @@ class TenantBanController extends Controller
             'tenant_player_id' => $ban->tenant_player_id,
             'player_name' => $ban->player_name,
             'player_steam_id' => $ban->player_steam_id,
+            'length_code' => $ban->length_code,
+            'length_label' => $ban->lengthLabel(),
             'reason' => $ban->reason,
             'admin_reason' => $includeAdminReason ? $ban->admin_reason : null,
             'banned_at' => $ban->banned_at ? $ban->banned_at->toIso8601String() : null,
@@ -281,5 +291,12 @@ class TenantBanController extends Controller
         }
 
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function normalizeLengthCode(string $code): string
+    {
+        $trimmed = strtolower(trim($code));
+
+        return $trimmed === '' ? '0' : $trimmed;
     }
 }

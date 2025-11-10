@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->foreignId('tenant_player_id')->nullable()->constrained('tenant_players')->nullOnDelete();
             $table->string('player_name');
             $table->string('player_steam_id', 32)->nullable();
+            $table->string('length_code', 16)->default('0');
             $table->text('reason');
             $table->text('admin_reason')->nullable();
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();

@@ -33,6 +33,7 @@ class TenantBan extends Model
         'tenant_player_id',
         'player_name',
         'player_steam_id',
+        'length_code',
         'reason',
         'admin_reason',
         'created_by_user_id',
@@ -109,5 +110,14 @@ class TenantBan extends Model
         }
 
         return 'System';
+    }
+
+    public function lengthLabel(): string
+    {
+        if ($this->length_code === '0') {
+            return 'Permanent';
+        }
+
+        return strtoupper($this->length_code);
     }
 }

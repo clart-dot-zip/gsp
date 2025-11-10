@@ -41,6 +41,14 @@
                             @enderror
                         </div>
                         <div class="mb-3">
+                            <label for="length_code" class="form-label">Ban Length<span class="text-danger">*</span></label>
+                            <input type="text" id="length_code" name="length_code" class="form-control" value="{{ old('length_code', '0') }}" placeholder="e.g. 1d, 12h, 30m or 0 for permanent">
+                            <div class="form-text">Use multiples like <code>30m</code>, <code>4h</code>, <code>7d</code>, <code>1w</code>, <code>1y</code>. Enter <code>0</code> for permanent bans.</div>
+                            @error('length_code')
+                                <div class="text-danger small">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="mb-3">
                             <label for="reason" class="form-label">Public Reason<span class="text-danger">*</span></label>
                             <textarea id="reason" name="reason" class="form-control" rows="3" required>{{ old('reason') }}</textarea>
                             <div class="form-text">Visible to all players.</div>

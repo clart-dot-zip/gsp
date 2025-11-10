@@ -35,6 +35,7 @@
                         <th scope="col">ID</th>
                         <th scope="col">Player</th>
                         <th scope="col">Steam ID</th>
+                        <th scope="col">Length</th>
                         <th scope="col">Reason</th>
                         <th scope="col">Time Banned</th>
                         <th scope="col">Banning Admin</th>
@@ -49,6 +50,7 @@
                             <td>{{ $ban->id }}</td>
                             <td>{{ $ban->player_name }}</td>
                             <td>{{ $ban->player_steam_id ?? 'Unknown' }}</td>
+                            <td>{{ $ban->lengthLabel() }}</td>
                             <td>{{ $ban->reason }}</td>
                             <td>
                                 @php
@@ -63,7 +65,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $canViewAdminReason ? 7 : 6 }}" class="text-center text-muted">
+                            <td colspan="{{ $canViewAdminReason ? 8 : 7 }}" class="text-center text-muted">
                                 No bans recorded for this tenant yet.
                             </td>
                         </tr>
