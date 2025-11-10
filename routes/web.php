@@ -100,6 +100,9 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
         Route::prefix('/tenants/{tenant}/bans')->name('tenants.bans.')->middleware('permission:manage_tenant_bans')->group(function () {
             Route::get('/create', [TenantBanController::class, 'create'])->name('create');
             Route::post('/', [TenantBanController::class, 'store'])->name('store');
+            Route::get('/{ban}/edit', [TenantBanController::class, 'edit'])->name('edit');
+            Route::put('/{ban}', [TenantBanController::class, 'update'])->name('update');
+            Route::delete('/{ban}', [TenantBanController::class, 'destroy'])->name('destroy');
         });
     });
 

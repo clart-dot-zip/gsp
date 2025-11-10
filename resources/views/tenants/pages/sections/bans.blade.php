@@ -42,6 +42,9 @@
                         @if($canViewAdminReason)
                             <th scope="col">Admin Notes</th>
                         @endif
+                        @if($canManageBans)
+                            <th scope="col" class="text-end">Actions</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -67,10 +70,20 @@
                             @if($canViewAdminReason)
                                 <td>{{ $ban->admin_reason ?? '—' }}</td>
                             @endif
+                            @if($canManageBans)
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ route('tenants.bans.edit', [$tenant, $ban]) }}" class="btn btn-sm btn-outline-secondary me-2">Edit</a>
+                                    <form method="POST" action="{{ route('tenants.bans.destroy', [$tenant, $ban]) }}" class="d-inline" onsubmit="return confirm('Unban this player? This will remove the record.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Unban</button>
+                                    </form>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $canViewAdminReason ? 8 : 7 }}" class="text-center text-muted">
+                            <td colspan="{{ ($canViewAdminReason ? 8 : 7) + ($canManageBans ? 1 : 0) }}" class="text-center text-muted">
                                 No bans recorded for this tenant yet.
                             </td>
                         </tr>

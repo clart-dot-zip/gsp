@@ -95,6 +95,71 @@ class TenantBanController extends Controller
             ->with('status', 'Ban added for '.$player->display_name.'.');
     }
 
+    public function edit(Request $request, Tenant $tenant, TenantBan $ban): View
+    {
+        $this->assertTenantContext($request, $tenant);
+        abort_unless($ban->tenant_id === $tenant->id, 404);
+
+        $canViewAdminReason = $this->canViewAdminReason($request->user());
+
+        $bannedAtValue = $ban->banned_at
+            ? $ban->banned_at->timezone(config('app.timezone'))->format('Y-m-d\TH:i')
+            : ($ban->created_at
+                ? $ban->created_at->timezone(config('app.timezone'))->format('Y-m-d\TH:i')
+                : now()->format('Y-m-d\TH:i'));
+
+        return view('tenants.bans.edit', [
+            'tenant' => $tenant,
+            'ban' => $ban,
+            'canViewAdminReason' => $canViewAdminReason,
+            'bannedAtValue' => $bannedAtValue,
+        ]);
+    }
+
+    public function update(Request $request, Tenant $tenant, TenantBan $ban): RedirectResponse
+    {
+        $this->assertTenantContext($request, $tenant);
+        abort_unless($ban->tenant_id === $tenant->id, 404);
+
+        $canViewAdminReason = $this->canViewAdminReason($request->user());
+
+        $data = $request->validate([
+            'length_code' => ['required', 'string', 'max:16', 'regex:/^(0|[0-9]+[smhdwy])$/i'],
+            'reason' => ['required', 'string', 'max:500'],
+            'admin_reason' => ['nullable', 'string', 'max:1000'],
+            'banned_at' => ['nullable', 'date'],
+        ]);
+
+        $ban->length_code = $this->normalizeLengthCode($data['length_code']);
+        $ban->reason = trim($data['reason']);
+
+        if ($canViewAdminReason) {
+            $ban->admin_reason = isset($data['admin_reason']) && $data['admin_reason'] !== ''
+                ? trim($data['admin_reason'])
+                : null;
+        }
+
+        $ban->banned_at = isset($data['banned_at']) && $data['banned_at'] !== ''
+            ? Carbon::parse($data['banned_at'])
+            : null;
+
+        $ban->save();
+
+        return Redirect::route('tenants.pages.show', ['page' => 'bans'])
+            ->with('status', 'Ban updated.');
+    }
+
+    public function destroy(Request $request, Tenant $tenant, TenantBan $ban): RedirectResponse
+    {
+        $this->assertTenantContext($request, $tenant);
+        abort_unless($ban->tenant_id === $tenant->id, 404);
+
+        $ban->delete();
+
+        return Redirect::route('tenants.pages.show', ['page' => 'bans'])
+            ->with('status', 'Ban removed.');
+    }
+
     protected function assertTenantContext(Request $request, Tenant $tenant): void
     {
         $selectedTenantId = (int) $request->session()->get('tenant_id');
