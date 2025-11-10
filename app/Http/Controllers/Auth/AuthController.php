@@ -122,7 +122,7 @@ class AuthController extends Controller
 
     protected function completeContactSteamLogin(Request $request, string $steamId)
     {
-    $contacts = TenantContact::where('steam_id', $steamId)->with(['tenant', 'role'])->get();
+        $contacts = TenantContact::where('steam_id', $steamId)->with(['tenant', 'role'])->get();
 
         if ($contacts->isEmpty()) {
             Log::warning('Steam OpenID matched Steam ID with no tenant contact.', [
@@ -135,13 +135,51 @@ class AuthController extends Controller
         }
 
         $primaryContact = $contacts->first();
+        $preferredName = $primaryContact && $primaryContact->name ? $primaryContact->name : null;
+        $preferredEmail = $primaryContact && $primaryContact->email ? $primaryContact->email : null;
+        $fallbackEmail = 'steam-' . $steamId . '@contacts.auth.local';
 
-        $user = User::updateOrCreate([
-            'steam_id' => $steamId,
-        ], [
-            'name' => ($primaryContact && $primaryContact->name) ? $primaryContact->name : 'Steam Contact',
-            'email' => ($primaryContact && $primaryContact->email) ? $primaryContact->email : 'steam-'.$steamId.'@contacts.auth.local',
-        ]);
+        $user = User::where('steam_id', $steamId)->first();
+
+        if (! $user && $preferredEmail) {
+            $user = User::where('email', $preferredEmail)->first();
+
+            if ($user && $user->steam_id && $user->steam_id !== $steamId) {
+                Log::warning('Steam contact login email matched a different Steam user. Falling back to generated email.', [
+                    'steam_id' => $steamId,
+                    'conflicting_user_id' => $user->id,
+                    'conflicting_steam_id' => $user->steam_id,
+                ]);
+
+                $user = null;
+                $preferredEmail = null;
+            }
+        }
+
+        if (! $user) {
+            $user = new User();
+            $user->email = $preferredEmail ?: $fallbackEmail;
+        } else {
+            if ($preferredEmail && $user->email !== $preferredEmail) {
+                $user->email = $preferredEmail;
+            } elseif (! $user->email) {
+                $user->email = $fallbackEmail;
+            }
+        }
+
+        if ($preferredName && $user->name !== $preferredName) {
+            $user->name = $preferredName;
+        } elseif (! $user->name) {
+            $user->name = 'Steam Contact';
+        }
+
+        $user->steam_id = $steamId;
+
+        if ($primaryContact) {
+            $user->tenant_contact_id = $primaryContact->id;
+        }
+
+        $user->save();
 
         $group = Group::firstWhere('slug', 'tenant-contact');
         if ($group) {
