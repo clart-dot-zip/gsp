@@ -56,7 +56,12 @@
                                 @php
                                     $timestamp = $ban->banned_at ?? $ban->created_at;
                                 @endphp
-                                {{ $timestamp ? $timestamp->timezone(config('app.timezone'))->format('M j, Y g:i A') : '—' }}
+                                @if($timestamp)
+                                    {{ $timestamp->timezone(config('app.timezone'))->format('M j, Y g:i A') }}
+                                    <div class="text-muted small">{{ $timestamp->diffForHumans() }}</div>
+                                @else
+                                    —
+                                @endif
                             </td>
                             <td>{{ $ban->banningAdminLabel() }}</td>
                             @if($canViewAdminReason)
