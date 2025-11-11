@@ -113,8 +113,7 @@
                                                 @endif
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-danger"
-                                                    data-toggle="collapse"
-                                                    data-target="#delete-tenant-{{ $tenant->id }}"
+                                                    data-tenant-delete-toggle="delete-tenant-{{ $tenant->id }}"
                                                     aria-expanded="{{ old('delete_confirmation_tenant_id') == $tenant->id ? 'true' : 'false' }}"
                                                     aria-controls="delete-tenant-{{ $tenant->id }}">
                                                     <i class="fas fa-trash-alt mr-1"></i>Delete
@@ -128,8 +127,8 @@
                                         $hasDeleteFieldError = $tenantDeletionErrors->has('delete_confirmation_name') && $showDeletionForm;
                                         $deleteFieldError = $hasDeleteFieldError ? $tenantDeletionErrors->first('delete_confirmation_name') : null;
                                     @endphp
-                                    <tr id="delete-tenant-{{ $tenant->id }}" class="collapse {{ $showDeletionForm ? 'show' : '' }}">
-                                        <td colspan="5" class="bg-light">
+                                    <tr data-tenant-delete-row="delete-tenant-{{ $tenant->id }}" id="delete-tenant-{{ $tenant->id }}" class="tenant-delete-row {{ $showDeletionForm ? '' : 'd-none' }}">
+                                        <td colspan="5" class="bg-light border-top">
                                             <form method="POST" action="{{ route('tenants.destroy', $tenant) }}" class="border rounded p-3">
                                                 @csrf
                                                 @method('DELETE')
@@ -181,6 +180,38 @@
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 var inputs = document.querySelectorAll('[data-tenant-delete-input]');
+                var toggleButtons = document.querySelectorAll('[data-tenant-delete-toggle]');
+
+                toggleButtons.forEach(function (button) {
+                    var targetKey = button.getAttribute('data-tenant-delete-toggle');
+                    var row = document.querySelector('[data-tenant-delete-row="' + targetKey + '"]');
+
+                    if (!row) {
+                        return;
+                    }
+
+                    button.addEventListener('click', function () {
+                        var isHidden = row.classList.contains('d-none');
+
+                        document.querySelectorAll('[data-tenant-delete-row]').forEach(function (otherRow) {
+                            if (otherRow !== row) {
+                                otherRow.classList.add('d-none');
+                                var relatedButton = document.querySelector('[data-tenant-delete-toggle="' + otherRow.getAttribute('data-tenant-delete-row') + '"]');
+                                if (relatedButton) {
+                                    relatedButton.setAttribute('aria-expanded', 'false');
+                                }
+                            }
+                        });
+
+                        if (isHidden) {
+                            row.classList.remove('d-none');
+                            button.setAttribute('aria-expanded', 'true');
+                        } else {
+                            row.classList.add('d-none');
+                            button.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                });
 
                 inputs.forEach(function (input) {
                     var expected = input.getAttribute('data-tenant-delete-input');
