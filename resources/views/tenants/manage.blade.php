@@ -111,12 +111,61 @@
                                                         <i class="fas fa-address-book mr-1"></i>Contacts
                                                     </a>
                                                 @endif
+                                                <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    data-toggle="collapse"
+                                                    data-target="#delete-tenant-{{ $tenant->id }}"
+                                                    aria-expanded="{{ old('delete_confirmation_tenant_id') == $tenant->id ? 'true' : 'false' }}"
+                                                    aria-controls="delete-tenant-{{ $tenant->id }}">
+                                                    <i class="fas fa-trash-alt mr-1"></i>Delete
+                                                </button>
                                             </div>
+                                        </td>
+                                    </tr>
+                                    @php
+                                        $tenantDeletionErrors = $errors->getBag('tenantDeletion');
+                                        $showDeletionForm = old('delete_confirmation_tenant_id') == $tenant->id;
+                                        $hasDeleteFieldError = $tenantDeletionErrors->has('delete_confirmation_name') && $showDeletionForm;
+                                        $deleteFieldError = $hasDeleteFieldError ? $tenantDeletionErrors->first('delete_confirmation_name') : null;
+                                    @endphp
+                                    <tr id="delete-tenant-{{ $tenant->id }}" class="collapse {{ $showDeletionForm ? 'show' : '' }}">
+                                        <td colspan="5" class="bg-light">
+                                            <form method="POST" action="{{ route('tenants.destroy', $tenant) }}" class="border rounded p-3">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="delete_confirmation_tenant_id" value="{{ $tenant->id }}">
+                                                <p class="mb-3 text-danger">
+                                                    Deleting <strong>{{ $tenant->name }}</strong> removes all associated contacts, permissions, players, bans, tickets, and logs. This action cannot be undone.
+                                                </p>
+                                                <div class="form-row align-items-center">
+                                                    <div class="col-sm-8 col-md-9 mb-2">
+                                                        <label for="delete-confirmation-{{ $tenant->id }}" class="sr-only">Confirm tenant name</label>
+                                                        <input
+                                                            type="text"
+                                                            id="delete-confirmation-{{ $tenant->id }}"
+                                                            name="delete_confirmation_name"
+                                                            class="form-control form-control-sm {{ $hasDeleteFieldError ? 'is-invalid' : '' }}"
+                                                            placeholder="Type '{{ $tenant->name }}' to confirm"
+                                                            value="{{ $showDeletionForm ? old('delete_confirmation_name') : '' }}"
+                                                            required
+                                                            data-tenant-delete-input="{{ e($tenant->name) }}"
+                                                            data-submit-button="delete-tenant-submit-{{ $tenant->id }}">
+                                                        @if ($hasDeleteFieldError)
+                                                            <span class="invalid-feedback d-block">{{ $deleteFieldError }}</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="col-sm-4 col-md-3 mb-2 text-right">
+                                                        <button type="submit" class="btn btn-sm btn-danger" id="delete-tenant-submit-{{ $tenant->id }}">
+                                                            Delete Tenant
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-4">
+                                        <td colspan="5" class="text-center py-4">
                                             <em>No tenants yet. Add one using the form.</em>
                                         </td>
                                     </tr>
@@ -128,4 +177,32 @@
             </div>
         </div>
     </div>
+    @once
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var inputs = document.querySelectorAll('[data-tenant-delete-input]');
+
+                inputs.forEach(function (input) {
+                    var expected = input.getAttribute('data-tenant-delete-input');
+                    var buttonId = input.getAttribute('data-submit-button');
+                    var submitButton = document.getElementById(buttonId);
+
+                    if (!submitButton) {
+                        return;
+                    }
+
+                    var toggleState = function () {
+                        if (input.value.trim() === expected) {
+                            submitButton.removeAttribute('disabled');
+                        } else {
+                            submitButton.setAttribute('disabled', 'disabled');
+                        }
+                    };
+
+                    input.addEventListener('input', toggleState);
+                    toggleState();
+                });
+            });
+        </script>
+    @endonce
 </x-app-layout>

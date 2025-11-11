@@ -53,6 +53,7 @@ Route::middleware(['auth', 'tenant.activity'])->group(function () {
 
     Route::get('/tenants/manage', [TenantController::class, 'index'])->name('tenants.manage')->middleware('permission:manage_tenants');
     Route::post('/tenants', [TenantController::class, 'store'])->name('tenants.store')->middleware('permission:manage_tenants');
+    Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->name('tenants.destroy')->middleware('permission:manage_tenants');
     Route::post('/tenants/select', TenantSelectionController::class)->name('tenants.select')->middleware('permission:manage_tenants');
     Route::get('/tenant-access', [TenantAccessController::class, 'show'])->name('tenant-access.show');
     Route::post('/tenant-access', [TenantAccessController::class, 'update'])->name('tenant-access.update');
