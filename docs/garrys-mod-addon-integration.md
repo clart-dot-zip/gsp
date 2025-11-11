@@ -52,7 +52,7 @@ All endpoints return JSON with a top-level `data` key (except 204 deletes).
 - `DELETE /api/v1/tenant/bans/{ban}` → lift/remove a recorded ban.
 
 ### Support tickets
-- `POST /api/v1/tenant/support-tickets` → create a new support/helpdesk ticket scoped to the tenant. Accepts optional `external_reference` for idempotent retries, links a triggering player by id or SteamID, and bulk associates related player ids.
+- `POST /api/v1/tenant/support-tickets` → create a new support/helpdesk ticket scoped to the tenant. Accepts optional `external_reference` for idempotent retries (returns HTTP 200 with the existing ticket when reused), links a triggering player by id or SteamID, and bulk associates related player ids. You can include an initial `note_body` plus timer/metadata fields to capture the originating chat message as the latest note.
 
 ## Payload Reference
 Use the following contracts when marshalling data from ULX.
@@ -164,7 +164,25 @@ Use the following contracts when marshalling data from ULX.
   "players": [
     { "id": 101, "display_name": "Clart", "steam_id": "76561198000000000" },
     { "id": 102, "display_name": "Helper", "steam_id": "76561198000000001" }
-  ]
+  ],
+  "latest_note": {
+    "id": 9001,
+    "tenant_id": 7,
+    "ticket_id": 314,
+    "body": "Player reported crash via !support chat command.",
+    "is_resolution": false,
+    "timer_seconds": null,
+    "timer_started_at": null,
+    "timer_stopped_at": null,
+    "created_at": "2025-11-10T19:02:15+00:00",
+    "updated_at": "2025-11-10T19:02:15+00:00",
+    "author": {
+      "type": "App\\Models\\TenantPlayer",
+      "id": 101,
+      "label": "Clart"
+    },
+    "meta": null
+  }
 }
 ```
 
@@ -281,7 +299,13 @@ Schemas describe accepted fields for create/update endpoints. Omitted properties
       "items": { "type": "integer", "minimum": 1 },
       "uniqueItems": true
     },
-    "opened_at": { "type": ["string", "null"], "format": "date-time" }
+    "opened_at": { "type": ["string", "null"], "format": "date-time" },
+    "note_body": { "type": ["string", "null"] },
+    "note_is_resolution": { "type": ["boolean", "null"] },
+    "note_timer_seconds": { "type": ["integer", "null"], "minimum": 0 },
+    "note_timer_started_at": { "type": ["string", "null"], "format": "date-time" },
+    "note_timer_stopped_at": { "type": ["string", "null"], "format": "date-time" },
+    "note_meta": { "type": ["object", "null"], "additionalProperties": true }
   },
   "required": ["subject"]
 }
